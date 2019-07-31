@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from fairseq import utils
 
-from fairseq.criterion import FairseqCriterion, register_criterion
+from fairseq.criterions import FairseqCriterion, register_criterion
 
 
 @register_criterion('sentence_prediction_mtvat')

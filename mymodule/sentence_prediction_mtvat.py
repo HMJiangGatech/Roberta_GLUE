@@ -200,13 +200,15 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
                 self.noisycopy_model.train()
 
         self.global_trainstep = self.global_trainstep+1
+        teacher_model = self.teacher_model
+        noisycopy_model = self.noisycopy_model
 
-        if args.mean_teacher and self.global_trainstep%args.mean_teacher_updatefreq==0:
+        if args.mean_teacher:
             if self.global_trainstep < args.mean_teacher_rampup:
                 _alpha = args.mean_teacher_alpha1
             else:
                 _alpha = args.mean_teacher_alpha2
-            update_meanteacher(teacher_model.named_parameters(), param_optimizer, average=args.mean_teacher_avg, alpha=_alpha, step=self.global_trainstep//args.mean_teacher_updatefreq)
+            update_meanteacher(teacher_model.named_parameters(), model.named_parameters(), average=args.mean_teacher_avg, alpha=_alpha, step=self.global_trainstep)
 
         padding_mask = sample['net_input']['src_tokens'].eq(criterion.padding_idx)
         if self.args.mean_teacher:

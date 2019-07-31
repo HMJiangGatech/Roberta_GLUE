@@ -217,7 +217,7 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
             teacher_logits = teacher_logits.detach()
 
         if args.use_vat:
-            loss, sample_size, logging_output, logits, embed = criterion_forward(criterion, model, sample)
+            loss, sample_size, logging_output, logits, embed = criterion(model, sample, returnfull=True)
             prob_orig = F.log_softmax(logits.view(-1, logits.size(-1)).float(), 1).exp()
             newembed = (embed.data.detach()+embed.data.new(embed.size()).normal_(0, 1)*1e-5).detach()
             newembed.requires_grad_()
@@ -279,58 +279,6 @@ def get_logit(model, sample, padding_mask):
         padding_mask=padding_mask,
     )
     return logits, extra
-
-def criterion_forward(self, model, sample, reduce=True):
-    """Compute the loss for the given sample.
-
-    Returns a tuple with three elements:
-    1) the loss
-    2) the sample size, which is used as the denominator for the gradient
-    3) logging outputs to display while training
-    """
-    features, extra = model(**sample['net_input'], features_only=True, return_all_hiddens=True)
-    padding_mask = sample['net_input']['src_tokens'].eq(self.padding_idx)
-
-    assert hasattr(model, 'classification_heads') and \
-        'sentence_classification_head' in model.classification_heads, \
-        "model must provide sentence classification head for --criterion=sentence_prediction"
-
-    logits = model.classification_heads['sentence_classification_head'](
-        features,
-        padding_mask=padding_mask,
-    )
-
-    targets = model.get_targets(sample, [logits]).view(-1)
-    sample_size = targets.numel()
-
-    if not self.args.regression_target:
-        loss = F.nll_loss(
-            F.log_softmax(logits, dim=-1, dtype=torch.float32),
-            targets,
-            reduction='sum',
-        )
-    else:
-        logits = logits.squeeze().float()
-        targets = targets.float()
-        loss = F.mse_loss(
-            logits,
-            targets,
-            reduction='sum',
-        )
-
-    logging_output = {
-        'loss': utils.item(loss.data) if reduce else loss.data,
-        'ntokens': sample['ntokens'],
-        'nsentences': sample_size,
-        'sample_size': sample_size,
-    }
-
-    if not self.args.regression_target:
-        preds = logits.max(dim=1)[1]
-        logging_output.update(
-            ncorrect=(preds == targets).sum().item()
-        )
-    return loss, sample_size, logging_output, logits, extra['inner_states'][0]
 
 def embed_forward(model, embed, padding_mask):
     encoder = model.decoder # RobertaEncoder

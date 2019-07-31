@@ -27,7 +27,7 @@ from fairseq.data import (
 from fairseq.tasks import FairseqTask, register_task
 from fairseq.tasks.sentence_prediction import SentencePredictionTask
 
-from utils import *
+from .utils import *
 
 import copy
 
@@ -36,7 +36,7 @@ import torch.nn.functional as F
 
 
 @register_task('sentence_prediction_mtvat')
-class SentencePredictionMTVATTask(FairseqTask):
+class SentencePredictionMTVATTask(SentencePredictionTask):
     """
     Sentence (or sentence pair) prediction (classification or regression) task.
 

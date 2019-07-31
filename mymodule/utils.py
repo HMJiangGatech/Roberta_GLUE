@@ -2,7 +2,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.nn.utils import clip_grad_norm_
-from module.functions import StableDropout
 import copy
 
 def boolean_string(s):
@@ -14,10 +13,6 @@ def none_string(s):
     if s.lower() == 'none':
         return None
     return s.lower()
-
-def apply_dropout(m):
-    if type(m) == nn.Dropout or type(m) == StableDropout:
-        m.train()
 
 def teach_class(logit_stu, logit_tea, class_name, _lambda):
     if class_name is None:

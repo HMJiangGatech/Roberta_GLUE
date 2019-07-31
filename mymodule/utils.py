@@ -71,7 +71,7 @@ def update_advcopy_model(noisycopy_model,model):
     _eps = noisycopy_model.advcopy_eps / (total_norm + 1e-6)
 
     for name,param in model.named_parameters():
-        if p.grad is None:
+        if param.grad is None:
             continue
         param_new = param + param.grad.data.detach()*_eps
         rec_setattr(noisycopy_model,name,param_new)

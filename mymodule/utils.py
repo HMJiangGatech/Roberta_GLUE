@@ -100,3 +100,21 @@ def rec_setattr(obj, attr, value):
     else:
         L = attr.split('.')
         rec_setattr(getattr(obj, L[0]), '.'.join(L[1:]), value)
+
+def update_meanteacher(teacher_param, student_param, average="exponential", alpha=0.995, step=None):
+    """ Utility function for optimize_on_cpu and 16-bits training.
+        Copy the parameters optimized on CPU/RAM back to the model on GPU
+        average: exponential or simple
+    """
+    # import pdb; pdb.set_trace()
+    for (name_tea, param_tea), (name_stu, param_stu) in zip(teacher_param, student_param):
+        if name_tea != name_stu:
+            logger.error("name_tea != name_stu: {} {}".format(name_tea, name_stu))
+            raise ValueError
+        param_new = param_stu.data.to(param_tea.device)
+        if average == "exponential":
+            param_tea.data.add_( (1-alpha)*(param_new-param_tea.data) )
+        elif average == "simple":
+            virtual_decay = 1 / float(step + 1)
+            diff = (param_new - param_tea.data) * virtual_decay
+            param_tea.data.add_(diff)

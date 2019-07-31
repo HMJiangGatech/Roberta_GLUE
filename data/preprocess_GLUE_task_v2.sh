@@ -60,7 +60,7 @@ do
     TEST_INPUT_COLUMNS=( 2 3 )
     LABEL_COLUMN=4
   elif [ "$TASK" = "MRPC" ]
-  the
+  then
     SPLITS="train dev dev_glod test"
     INPUT_COLUMNS=( 4 5 )
     TEST_INPUT_COLUMNS=( 4 5 )

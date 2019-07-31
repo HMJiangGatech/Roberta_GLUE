@@ -274,6 +274,7 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
 
 def get_logit(model, sample, padding_mask):
     features, extra = model(**sample['net_input'], features_only=True, return_all_hiddens=True)
+    features = features.transpose(0, 1)
     logits = model.classification_heads['sentence_classification_head'](
         features,
         padding_mask=padding_mask,

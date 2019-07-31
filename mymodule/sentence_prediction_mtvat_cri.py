@@ -32,6 +32,8 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
         3) logging outputs to display while training
         """
         features, extra = model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
+        if returnfull:
+            features = features.transpose(0, 1)
         padding_mask = sample['net_input']['src_tokens'].eq(self.padding_idx)
 
         assert hasattr(model, 'classification_heads') and \

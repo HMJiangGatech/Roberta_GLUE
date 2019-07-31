@@ -213,7 +213,7 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
         padding_mask = sample['net_input']['src_tokens'].eq(criterion.padding_idx)
         if self.args.mean_teacher:
             with torch.no_grad():
-                teacher_logits,_ = get_logit(self.mean_teacher, sample, padding_mask)
+                teacher_logits,_ = get_logit(teacher_model, sample, padding_mask)
             teacher_logits = teacher_logits.detach()
 
         if args.use_vat:

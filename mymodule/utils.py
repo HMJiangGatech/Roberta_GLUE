@@ -60,6 +60,8 @@ def update_advcopy_model(noisycopy_model,model):
     # rescale grad
     total_norm = 0
     for p in model.parameters():
+        if p.grad is None:
+            continue
         param_norm = p.grad.data.float().norm(2)
         if (torch.isnan(param_norm) or torch.isinf(param_norm)):
             return None, True
@@ -69,6 +71,8 @@ def update_advcopy_model(noisycopy_model,model):
     _eps = noisycopy_model.advcopy_eps / (total_norm + 1e-6)
 
     for name,param in model.named_parameters():
+        if p.grad is None:
+            continue
         param_new = param + param.grad.data.detach()*_eps
         rec_setattr(noisycopy_model,name,param_new)
     return noisycopy_model, False

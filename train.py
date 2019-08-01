@@ -248,7 +248,7 @@ def validate(args, trainer, task, epoch_itr, subsets):
                 meter.reset()
         extra_meters = collections.defaultdict(lambda: AverageMeter())
 
-        pred = []
+        preds = []
         targets = []
         pred_ids = []
         for sample in progress:
@@ -257,7 +257,7 @@ def validate(args, trainer, task, epoch_itr, subsets):
             for k, v in log_output.items():
                 if k in ['loss', 'nll_loss', 'ntokens', 'nsentences', 'sample_size']:
                     continue
-                elif k == 'pred':
+                elif k == 'preds':
                     pred.append(v)
                 elif k == 'targets':
                     targets.append(v)
@@ -265,19 +265,19 @@ def validate(args, trainer, task, epoch_itr, subsets):
                     pred_ids.append(v)
                 else:
                     extra_meters[k].update(v)
-        pred = np.concatenate(pred)
+        preds = np.concatenate(preds)
         pred_ids = np.concatenate(pred_ids).astype(int)
         targets = np.concatenate(targets)
         if not args.regression_target:
-            pred = pred.astype(int)
+            preds = preds.astype(int)
             targets = targets.astype(int)
         if args.best_checkpoint_metric == 'mcc':
-            extra_meters['mcc'].update(matthews_corrcoef(targets, pred))
+            extra_meters['mcc'].update(matthews_corrcoef(targets, preds))
         if args.best_checkpoint_metric == 'f1':
-            extra_meters['f1'].update(f1_score(targets, pred))
+            extra_meters['f1'].update(f1_score(targets, preds))
         if args.best_checkpoint_metric == 'PeSp':
-            pcof = pearsonr(targets, pred)[0]
-            scof = spearmanr(targets, pred)[0]
+            pcof = pearsonr(targets, preds)[0]
+            scof = spearmanr(targets, preds)[0]
             extra_meters['pearsonr'].update(pcof)
             extra_meters['spearmanr'].update(scof)
             extra_meters['PeSp'].update((pcof+scof)/2)

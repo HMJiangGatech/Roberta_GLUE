@@ -25,7 +25,7 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
                             help='file to save predictions to')
         # fmt: on
 
-    def forward(self, model, sample, reduce=True, returnfull = False, save_all = True):
+    def forward(self, model, sample, reduce=True, returnfull = False, save_all = False):
         """Compute the loss for the given sample.
 
         Returns a tuple with three elements:
@@ -79,14 +79,14 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
             )
             if save_all:
                 logging_output.update(
-                    preds_ids=np.copy(sample['net_input']['id'].cpu().squeeze().numpy()).astype(int),
+                    preds_ids=np.copy(sample['id'].cpu().squeeze().numpy()).astype(int),
                     preds=np.copy(preds.detach().cpu().squeeze().numpy()).astype(int),
                     targets=np.copy(targets.detach().cpu().squeeze().numpy()).astype(int)
                 )
         else:
             if save_all:
                 logging_output.update(
-                    preds_ids=np.copy(sample['net_input']['id'].cpu().squeeze().numpy()),
+                    preds_ids=np.copy(sample['id'].cpu().squeeze().numpy()),
                     preds=np.copy(logits.detach().cpu().squeeze().numpy()),
                     targets=np.copy(targets.detach().cpu().squeeze().numpy())
                 )
@@ -114,8 +114,8 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
             if 'ncorrect' in logging_outputs[0]:
                 ncorrect = sum(log.get('ncorrect', 0) for log in logging_outputs)
                 agg_output.update(accuracy=ncorrect/nsentences)
-            if 'pred' in logging_outputs[0]:
-                agg_output.update(pred=np.concatenate([log.get('pred', np.empty(0)) for log in logging_outputs]))
+            if 'preds' in logging_outputs[0]:
+                agg_output.update(preds=np.concatenate([log.get('preds', np.empty(0)) for log in logging_outputs]))
                 agg_output.update(targets=np.concatenate([log.get('targets', np.empty(0)) for log in logging_outputs]))
                 agg_output.update(pred_ids=np.concatenate([log.get('pred_ids', np.empty(0)) for log in logging_outputs]))
 

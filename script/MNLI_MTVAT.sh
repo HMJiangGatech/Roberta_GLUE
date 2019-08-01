@@ -15,10 +15,10 @@ DATA_ROOT=$PROJECT_ROOT/data
 TASK=MNLI
 TAG=MTVAT
 
-TOTAL_NUM_UPDATES=123873
-EPOCH=10          # total epoches
-WARMUP_UPDATES=7432      # 6 percent of the number of updates
-LR=1e-05                # Peak LR for polynomial LR scheduler.
+TOTAL_NUM_UPDATES=61936
+EPOCH=5          # total epoches
+WARMUP_UPDATES=4000      # 6 percent of the number of updates
+LR=2e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=3
 MAX_SENTENCES=32        # Batch size.
 

@@ -15,9 +15,9 @@ DATA_ROOT=$PROJECT_ROOT/data
 TASK=CoLA
 TAG=Baseline
 
-TOTAL_NUM_UPDATES=3598
+TOTAL_NUM_UPDATES=5336
 EPOCH=10          # total epoches
-WARMUP_UPDATES=214      # 6 percent of the number of updates
+WARMUP_UPDATES=320      # 6 percent of the number of updates
 LR=1e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=2
 MAX_SENTENCES=16        # Batch size.

@@ -15,18 +15,18 @@ DATA_ROOT=$PROJECT_ROOT/data
 TASK=CoLA
 TAG=MTVAT_Base
 
-TOTAL_NUM_UPDATES=900
-EPOCH=5          # total epoches
-WARMUP_UPDATES=50      # 6 percent of the number of updates
-LR=2e-05                # Peak LR for polynomial LR scheduler.
+TOTAL_NUM_UPDATES=5336
+EPOCH=10          # total epoches
+WARMUP_UPDATES=320      # 6 percent of the number of updates
+LR=1e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=2
-MAX_SENTENCES=32        # Batch size.
+MAX_SENTENCES=16        # Batch size.
 
 MEAN_TEACHER=True
 MEAN_TEACHER_AVG=exponential
 MT_ALPHA1=0.9
 MT_ALPHA2=0.99
-MT_RAMPUP=50
+MT_RAMPUP=320
 
 USE_VAT=True
 USE_NOISECP=False

@@ -129,7 +129,7 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
 
     def __init__(self, args, data_dictionary, label_dictionary):
         super().__init__(args, data_dictionary, label_dictionary)
-        self._meanteacher_model = None
+        self.teacher_model = None
         self.noisycopy_model  = None
         self.global_trainstep = 0
         if args.regression_target:

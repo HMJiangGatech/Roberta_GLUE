@@ -15,10 +15,10 @@ DATA_ROOT=$PROJECT_ROOT/data
 TASK=QNLI
 TAG=MTVAT_Base
 
-TOTAL_NUM_UPDATES=33112
-EPOCH=10          # total epoches
-WARMUP_UPDATES=1986      # 6 percent of the number of updates
-LR=1e-05                # Peak LR for polynomial LR scheduler.
+TOTAL_NUM_UPDATES=16556
+EPOCH=5          # total epoches
+WARMUP_UPDATES=993      # 6 percent of the number of updates
+LR=2e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=2
 MAX_SENTENCES=32        # Batch size.
 

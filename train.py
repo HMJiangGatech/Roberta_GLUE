@@ -13,6 +13,10 @@ import random
 
 import torch
 import os,sys
+import numpy as np
+from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import f1_score
+from scipy.stats import pearsonr, spearmanr
 
 from fairseq import checkpoint_utils, distributed_utils, options, progress_bar, tasks, utils
 from fairseq.data import iterators
@@ -244,13 +248,39 @@ def validate(args, trainer, task, epoch_itr, subsets):
                 meter.reset()
         extra_meters = collections.defaultdict(lambda: AverageMeter())
 
+        preds = []
+        targets = []
+        pred_ids = []
         for sample in progress:
             log_output = trainer.valid_step(sample)
 
             for k, v in log_output.items():
                 if k in ['loss', 'nll_loss', 'ntokens', 'nsentences', 'sample_size']:
                     continue
-                extra_meters[k].update(v)
+                elif k == 'preds':
+                    pred.append(v)
+                elif k == 'targets':
+                    targets.append(v)
+                elif k == 'pred_ids':
+                    pred_ids.append(v)
+                else:
+                    extra_meters[k].update(v)
+        preds = np.concatenate(preds)
+        pred_ids = np.concatenate(pred_ids).astype(int)
+        targets = np.concatenate(targets)
+        if not args.regression_target:
+            preds = preds.astype(int)
+            targets = targets.astype(int)
+        if args.best_checkpoint_metric == 'mcc':
+            extra_meters['mcc'].update(matthews_corrcoef(targets, preds))
+        if args.best_checkpoint_metric == 'f1':
+            extra_meters['f1'].update(f1_score(targets, preds))
+        if args.best_checkpoint_metric == 'PeSp':
+            pcof = pearsonr(targets, preds)[0]
+            scof = spearmanr(targets, preds)[0]
+            extra_meters['pearsonr'].update(pcof)
+            extra_meters['spearmanr'].update(scof)
+            extra_meters['PeSp'].update((pcof+scof)/2)
 
         # log validation stats
         stats = get_valid_stats(trainer, args, extra_meters)

@@ -46,4 +46,4 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \
 --fp16 --fp16-init-scale 4 --threshold-loss-scale 1 --fp16-scale-window 128 \
 --max-epoch $EPOCH \
---best-checkpoint-metric accuracy --maximize-best-checkpoint-metric;
+--best-checkpoint-metric f1 --maximize-best-checkpoint-metric;

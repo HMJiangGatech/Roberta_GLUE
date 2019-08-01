@@ -41,6 +41,7 @@ cp -f $(readlink -f "$0") $OUTPUT/script
 rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclude 'data' $PROJECT_ROOT/ $OUTPUT/src
 
 CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
+--vat_eps 1e-2 \
 --mean_teacher $MEAN_TEACHER \
 --mean_teacher_avg $MEAN_TEACHER_AVG \
 --mean_teacher_alpha1 $MT_ALPHA1 \

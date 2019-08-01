@@ -47,4 +47,4 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --fp16 --fp16-init-scale 4 --threshold-loss-scale 1 --fp16-scale-window 128 \
 --max-epoch $EPOCH \
 --regression-target \
---best-checkpoint-metric loss --maximize-best-checkpoint-metric;
+--best-checkpoint-metric PeSp --maximize-best-checkpoint-metric;

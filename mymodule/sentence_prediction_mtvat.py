@@ -162,6 +162,12 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
             label_dict = data_dict
         return cls(args, data_dict, label_dict)
 
+    def valid_step(self, sample, model, criterion):
+        model.eval()
+        with torch.no_grad():
+            loss, sample_size, logging_output = criterion(model, sample, save_all=True)
+        return loss, sample_size, logging_output
+
     def train_step(self, sample, model, criterion, optimizer, ignore_grad=False):
         """
         Do forward and backward, and return the loss as computed by *criterion*

@@ -10,6 +10,8 @@ import torch.nn.functional as F
 
 from fairseq import utils
 
+import numpy as np
+
 from fairseq.criterions import FairseqCriterion, register_criterion
 
 
@@ -23,7 +25,7 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
                             help='file to save predictions to')
         # fmt: on
 
-    def forward(self, model, sample, reduce=True, returnfull = False):
+    def forward(self, model, sample, reduce=True, returnfull = False, save_all = True):
         """Compute the loss for the given sample.
 
         Returns a tuple with three elements:
@@ -75,6 +77,19 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
             logging_output.update(
                 ncorrect=(preds == targets).sum().item()
             )
+            if save_all:
+                logging_output.update(
+                    preds_ids=np.copy(sample['net_input']['id'].cpu().squeeze().numpy()).astype(int),
+                    preds=np.copy(preds.detach().cpu().squeeze().numpy()).astype(int),
+                    targets=np.copy(targets.detach().cpu().squeeze().numpy()).astype(int)
+                )
+        else:
+            if save_all:
+                logging_output.update(
+                    preds_ids=np.copy(sample['net_input']['id'].cpu().squeeze().numpy()),
+                    preds=np.copy(logits.detach().cpu().squeeze().numpy()),
+                    targets=np.copy(targets.detach().cpu().squeeze().numpy())
+                )
         if returnfull:
             return loss, sample_size, logging_output, logits, extra['inner_states'][0]
         else:
@@ -95,9 +110,14 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
             'sample_size': sample_size,
         }
 
-        if len(logging_outputs) > 0 and 'ncorrect' in logging_outputs[0]:
-            ncorrect = sum(log.get('ncorrect', 0) for log in logging_outputs)
-            agg_output.update(accuracy=ncorrect/nsentences)
+        if len(logging_outputs) > 0:
+            if 'ncorrect' in logging_outputs[0]:
+                ncorrect = sum(log.get('ncorrect', 0) for log in logging_outputs)
+                agg_output.update(accuracy=ncorrect/nsentences)
+            if 'pred' in logging_outputs[0]:
+                agg_output.update(pred=np.concatenate([log.get('pred', np.empty(0)) for log in logging_outputs]))
+                agg_output.update(targets=np.concatenate([log.get('targets', np.empty(0)) for log in logging_outputs]))
+                agg_output.update(pred_ids=np.concatenate([log.get('pred_ids', np.empty(0)) for log in logging_outputs]))
 
         if sample_size != ntokens:
             agg_output['nll_loss'] = loss_sum / ntokens / math.log(2)

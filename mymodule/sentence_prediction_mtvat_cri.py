@@ -25,7 +25,7 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
                             help='file to save predictions to')
         # fmt: on
 
-    def forward(self, model, sample, reduce=True, returnfull = False, save_all = False):
+    def forward(self, model, sample, reduce=True, returnfull = False, save_all = True):
         """Compute the loss for the given sample.
 
         Returns a tuple with three elements:

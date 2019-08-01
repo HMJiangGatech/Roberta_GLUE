@@ -151,6 +151,8 @@ def train(args, trainer, task, epoch_itr):
         for k, v in log_output.items():
             if k in ['loss', 'nll_loss', 'ntokens', 'nsentences', 'sample_size']:
                 continue  # these are already logged above
+            if k in ['preds','pred_ids','targets']:
+                continue  # skip
             if 'loss' in k or k == 'accuracy':
                 extra_meters[k].update(v, log_output['sample_size'])
             else:

@@ -258,7 +258,7 @@ def validate(args, trainer, task, epoch_itr, subsets):
                 if k in ['loss', 'nll_loss', 'ntokens', 'nsentences', 'sample_size']:
                     continue
                 elif k == 'preds':
-                    pred.append(v)
+                    preds.append(v)
                 elif k == 'targets':
                     targets.append(v)
                 elif k == 'pred_ids':

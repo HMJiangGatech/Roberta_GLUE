@@ -12,7 +12,7 @@ PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
 ROBERTA_LARGE_DIR=$PROJECT_ROOT/checkpoints/roberta.base/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
-TASK=SST-2
+TASK=QNLI
 TAG=MTVAT_Base
 
 TOTAL_NUM_UPDATES=33112

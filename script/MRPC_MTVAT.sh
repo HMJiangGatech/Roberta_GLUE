@@ -15,18 +15,18 @@ DATA_ROOT=$PROJECT_ROOT/data
 TASK=MRPC
 TAG=MTVAT
 
-TOTAL_NUM_UPDATES=2296  # 10 epochs through RTE for bsz 16
-EPOCH=10          # total epoches
-WARMUP_UPDATES=137      # 6 percent of the number of updates
-LR=1e-05                # Peak LR for polynomial LR scheduler.
+TOTAL_NUM_UPDATES=574  # 10 epochs through RTE for bsz 16
+EPOCH=5          # total epoches
+WARMUP_UPDATES=50      # 6 percent of the number of updates
+LR=2e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=2
-MAX_SENTENCES=16        # Batch size.
+MAX_SENTENCES=32        # Batch size.
 
 MEAN_TEACHER=True
 MEAN_TEACHER_AVG=exponential
-MT_ALPHA1=0.99
-MT_ALPHA2=0.999
-MT_RAMPUP=137
+MT_ALPHA1=0.9
+MT_ALPHA2=0.99
+MT_RAMPUP=50
 
 USE_VAT=True
 USE_NOISECP=False

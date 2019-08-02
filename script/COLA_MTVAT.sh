@@ -24,8 +24,8 @@ MAX_SENTENCES=16        # Batch size.
 
 MEAN_TEACHER=True
 MEAN_TEACHER_AVG=exponential
-MT_ALPHA1=0.9
-MT_ALPHA2=0.99
+MT_ALPHA1=0.99
+MT_ALPHA2=0.999
 MT_RAMPUP=320
 
 USE_VAT=True
@@ -41,6 +41,8 @@ cp -f $(readlink -f "$0") $OUTPUT/script
 rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclude 'data' $PROJECT_ROOT/ $OUTPUT/src
 
 CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
+--mean_teacher_lambda 0.1 \
+--vat_lambda 10 \
 --mean_teacher $MEAN_TEACHER \
 --mean_teacher_avg $MEAN_TEACHER_AVG \
 --mean_teacher_alpha1 $MT_ALPHA1 \

@@ -24,6 +24,7 @@ wget https://hmjianggatech.github.io/files/data/SST-2/train_new.tsv -O $GLUE_DAT
 wget https://hmjianggatech.github.io/files/data/STS-B/dev_glod.tsv -O $GLUE_DATA_FOLDER/STS-B/dev_glod.tsv
 # cat sts-test.tsv| awk -F'\t' {'printf("%d\t%s\t%s\t%s\t%s\tnone\tnone\t%s\t%s\t%s\n",NR-1,$1,$2,$3,$4,$6,$7,$5)'}
 cp $GLUE_DATA_FOLDER/MRPC/msr_paraphrase_test.txt $GLUE_DATA_FOLDER/MRPC/dev_glod.tsv
+wget https://hmjianggatech.github.io/files/data/MSRP/train_new.tsv -O $GLUE_DATA_FOLDER/MSRP/train.tsv
 
 
 TASKS=$2 # QQP

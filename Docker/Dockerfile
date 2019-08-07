@@ -6,6 +6,7 @@ RUN git clone --depth=1 https://github.com/amix/vimrc.git /root/.vim_runtime
 RUN sh /root/.vim_runtime/install_awesome_vimrc.sh
 RUN git clone https://github.com/Xuyuanp/nerdtree-git-plugin.git /root/.vim_runtime/my_plugins/nerdtree-git-plugin
 COPY my_configs.vim /root/.vim_runtime/my_configs.vim
+COPY bashrc /root/.bashrc
 
 RUN pip3 install torch torchvision
 

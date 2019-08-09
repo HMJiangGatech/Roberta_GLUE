@@ -25,7 +25,7 @@ class SentencePredictionNEWCriterion(FairseqCriterion):
                             help='file to save predictions to')
         # fmt: on
 
-    def forward(self, model, sample, reduce=True, returnfull = False, save_all = True):
+    def forward(self, model, sample, reduce=True, returnfull = False, save_all = True, hist_model = None):
         """Compute the loss for the given sample.
 
         Returns a tuple with three elements:
@@ -33,7 +33,10 @@ class SentencePredictionNEWCriterion(FairseqCriterion):
         2) the sample size, which is used as the denominator for the gradient
         3) logging outputs to display while training
         """
-        features, extra = model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
+        if hist_model is None:
+            features, extra = model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
+        else:
+            features, extra = hist_model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
         if returnfull:
             features = features.transpose(0, 1)
         padding_mask = sample['net_input']['src_tokens'].eq(self.padding_idx)

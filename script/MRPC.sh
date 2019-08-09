@@ -33,7 +33,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --max-positions 512 \
 --max-sentences $MAX_SENTENCES \
 --max-tokens 4400 \
---task sentence_prediction \
+--task sentence_prediction_new \
 --reset-optimizer --reset-dataloader --reset-meters \
 --required-batch-size-multiple 1 \
 --init-token 0 --separator-token 2 \

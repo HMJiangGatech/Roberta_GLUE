@@ -60,80 +60,21 @@ class SentencePredictionNEWTask(SentencePredictionTask):
         parser.add_argument('--truncate-sequence', action='store_true', default=False,
                             help='Truncate sequence to max_sequence_length')
 
-        ## Teacher
-        parser.add_argument('--teacher_class',
-            default="smart",
-            type=none_string,
-            help="smart (default) | logit, maxmargin, teach what.")
-
-        ## Mean Teacher
-        parser.add_argument('--mean_teacher',
+        ## historical model
+        parser.add_argument('--hist_model',
             default=True,
             type=boolean_string,
-            help="False (default), use mean teacher.")
-        parser.add_argument('--mean_teacher_avg',
-            default="exponential",
-            type=none_string,
-            help="exponential (default) | simple | double_ema, moving average method.")
-        parser.add_argument('--mean_teacher_lambda',
-            default=1,
+            help="False (default), use historical model.")
+        parser.add_argument('--hist_lambda',
+            default=1.0,
             type=float,
-            help="False (default), trade off parameter from the consistent loss using mean teacher.")
-        parser.add_argument('--mean_teacher_rampup',
-            default=4000,
-            type=int,
-            help="4000 (default), rampup iteration.")
-        parser.add_argument('--mean_teacher_alpha1',
-            default=0.99,
-            type=float,
-            help="False (default), moving average parameter of mean teacher  (for the exponential moving average).")
-        parser.add_argument('--mean_teacher_alpha2',
-            default=0.999,
-            type=float,
-            help="False (default), moving average parameter of mean teacher  (for the exponential moving average).")
-
-        ## Virtual Adversarial Training
-        parser.add_argument('--use_vat',
-            default=True,
-            type=boolean_string,
-            help="False (default), use virtual adversarial training.")
-        parser.add_argument('--vat_eps',
-            default=1e-3,
-            type=float,
-            help="1 (default), perturbation size for virtual adversarial training.")
-        parser.add_argument('--vat_lambda',
-            default=1,
-            type=float,
-            help="1 (default), trade off parameter for virtual adversarial training.")
-
-        ## Use Noisy Copy
-        parser.add_argument('--use_noisycopy',
-            default=False,
-            type=boolean_string,
-            help="False (default), use noisy copy training.")
-        parser.add_argument('--noisycopy_eps',
-            default=1e-2,
-            type=float,
-            help="1e-4 (default), eps for noisy copy training.")
-
-        ## Use Adversarial Copy
-        parser.add_argument('--use_advcopy',
-            default=True,
-            type=boolean_string,
-            help="False (default), use adversarial copy training.")
-        parser.add_argument('--advcopy_eps',
-            default=1e-2,
-            type=float,
-            help="1e-3 (default), eps for adversarial copy training.")
+            help="1.0 (default), trade off parameters")
 
 
     def __init__(self, args, data_dictionary, label_dictionary):
         super().__init__(args, data_dictionary, label_dictionary)
-        self.teacher_model = None
-        self.noisycopy_model  = None
+        self.hist_model = None
         self.global_trainstep = 0
-        if args.regression_target:
-            self.args.teacher_class = 'logit'
 
     @classmethod
     def setup_task(cls, args, **kwargs):
@@ -198,82 +139,20 @@ class SentencePredictionNEWTask(SentencePredictionTask):
             return loss, sample_size, logging_output
 
         if self.global_trainstep == 0:
-            if self.args.mean_teacher:
-                self.teacher_model = copy.deepcopy(model)
-                self.teacher_model.train()
-            if self.args.use_noisycopy or self.args.use_advcopy:
-                self.noisycopy_model = create_noisycopy_model(model,args)
-                self.noisycopy_model.train()
+            if self.args.hist_model:
+                self.hist_model = copy.deepcopy(model)
+                self.hist_model.train()
 
         self.global_trainstep = self.global_trainstep+1
-        teacher_model = self.teacher_model
-        noisycopy_model = self.noisycopy_model
+        hist_model = self.hist_model
 
-        if args.mean_teacher:
-            if self.global_trainstep < args.mean_teacher_rampup:
-                _alpha = args.mean_teacher_alpha1
-            else:
-                _alpha = args.mean_teacher_alpha2
-            update_meanteacher(teacher_model.named_parameters(), model.named_parameters(), average=args.mean_teacher_avg, alpha=_alpha, step=self.global_trainstep)
 
-        padding_mask = sample['net_input']['src_tokens'].eq(criterion.padding_idx)
-        if self.args.mean_teacher:
-            with torch.no_grad():
-                teacher_logits,_ = get_logit(teacher_model, sample, padding_mask)
-            teacher_logits = teacher_logits.detach()
+        loss, sample_size, logging_output = criterion(model, sample)
 
-        if args.use_vat:
-            loss, sample_size, logging_output, logits, embed = criterion(model, sample, returnfull=True)
-            prob_orig = F.log_softmax(logits.view(-1, logits.size(-1)).float(), 1).exp()
-            newembed = (embed.data.detach()+embed.data.new(embed.size()).normal_(0, 1)*1e-5).detach()
-            newembed.requires_grad_()
-            logits_vat = embed_forward(model, newembed, padding_mask)
-            vat_loss = teach_class(logits_vat,logits.detach(),args.teacher_class,1)
-            optimizer.backward(vat_loss)
-            norm = newembed.grad.norm()
-            if (torch.isnan(norm) or torch.isinf(norm)):
-                print("Hit nan gradient in embed vat")
-                model.zero_grad()
-                optimizer.backward(loss)
-                return loss, sample_size, logging_output
-            adv_direct = newembed.grad/(  newembed.grad.abs().max(-1,keepdim=True)[0]  +1e-4)
-            newembed = newembed+adv_direct*self.args.vat_eps
-            newembed = newembed.detach()
-            if self.args.use_advcopy:
-                _model,is_nan = update_advcopy_model(copy.deepcopy(self.noisycopy_model),model)
-                if is_nan:
-                    print("Hit nan gradient in advcopy")
-                    model.zero_grad()
-                    optimizer.backward(loss)
-                    return loss, sample_size, logging_output
-                logits_vat = embed_forward(_model, newembed, padding_mask)
-            elif self.args.use_noisycopy:
-                _model = update_noisycopy_model(copy.deepcopy(self.noisycopy_model),model)
-                logits_vat = embed_forward(_model, newembed, padding_mask)
-            else:
-                logits_vat = embed_forward(model, newembed, padding_mask)
-            model.zero_grad()
-            # cross_entropy | double way
-            vat_loss = teach_class(logits_vat,logits.detach(),self.args.teacher_class,args.vat_lambda)
-            vat_loss += teach_class(logits,logits_vat.detach(),self.args.teacher_class,args.vat_lambda)
-
-            logging_output.update(
-                vat_loss=vat_loss.item()
-            )
-            loss = loss+vat_loss
-        else:
-            loss, sample_size, logging_output = criterion(model, sample)
-
-        if self.args.mean_teacher and self.args.teacher_class is not None:
-            if self.args.teacher_class == 'smart':
-                _lambda = self.args.mean_teacher_lambda # 1, important
-            else:
-                _lambda = self.args.mean_teacher_lambda * min(1,math.exp(-5*(1-acc_steps/self.args.mean_teacher_rampup)**2))
-            mt_loss = teach_class(logits,teacher_logits,self.args.teacher_class,_lambda)
-            logging_output.update(
-                mt_loss=mt_loss.item()
-            )
-            loss += mt_loss
+        # historical model
+        if self.args.hist_model:
+            loss_hist, _, _ = criterion(model, sample, hist_model=hist_model)
+            loss = loss+loss_hist*self.args.hist_lambda
 
         optimizer.backward(loss)
         return loss, sample_size, logging_output

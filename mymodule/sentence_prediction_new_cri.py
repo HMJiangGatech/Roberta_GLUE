@@ -36,7 +36,10 @@ class SentencePredictionNEWCriterion(FairseqCriterion):
         if hist_model is None:
             features, extra = model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
         else:
-            features, extra = hist_model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
+            with torch.no_grad():
+                features, extra = hist_model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
+            features = features.detach()
+            extra = [t.detach() for t in extra]
         if returnfull:
             features = features.transpose(0, 1)
         padding_mask = sample['net_input']['src_tokens'].eq(self.padding_idx)

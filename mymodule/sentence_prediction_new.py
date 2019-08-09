@@ -151,7 +151,7 @@ class SentencePredictionNEWTask(SentencePredictionTask):
 
         # historical model
         if self.args.hist_model:
-            loss_hist, _, _ = criterion(model, sample, hist_model=hist_model)
+            loss_hist, _, _ = criterion(model, sample, save_all=False, hist_model=hist_model)
             loss = loss+loss_hist*self.args.hist_lambda
 
         optimizer.backward(loss)

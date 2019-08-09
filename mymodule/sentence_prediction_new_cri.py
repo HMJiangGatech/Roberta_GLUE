@@ -15,8 +15,8 @@ import numpy as np
 from fairseq.criterions import FairseqCriterion, register_criterion
 
 
-@register_criterion('sentence_prediction_mtvat')
-class SentencePredictionMTVATCriterion(FairseqCriterion):
+@register_criterion('sentence_prediction_new')
+class SentencePredictionNEWCriterion(FairseqCriterion):
 
     @staticmethod
     def add_args(parser):

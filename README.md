@@ -15,3 +15,6 @@
 |baseline (test) |            |               |      |       |       |          |0.8876,0.8391 |               |        |
 |ours            |            |               |      |       |0.9167 |          |0.9255,0.8819 |0.8740,0.6919  |        |
 |ours            |            |               |      |       |       |0.9704(t) |0.8986,0.8453 |               |        |
+
+## WSC
+https://github.com/pytorch/fairseq/tree/roberta_wsc

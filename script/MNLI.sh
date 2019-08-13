@@ -39,7 +39,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --required-batch-size-multiple 1 \
 --init-token 0 --separator-token 2 \
 --arch roberta_large \
---criterion sentence_prediction \
+--criterion sentence_prediction_mtvat \
 --num-classes $NUM_CLASSES \
 --dropout 0.1 --attention-dropout 0.1 \
 --weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \

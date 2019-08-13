@@ -50,4 +50,5 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --user-dir ./mymodule \
 --best-checkpoint-metric f1 --maximize-best-checkpoint-metric \
 --no-last-checkpoints --no-save-optimizer-state \
+--find-unused-parameters \
 --seed $SEED

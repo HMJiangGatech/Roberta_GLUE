@@ -12,6 +12,7 @@ PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
 ROBERTA_LARGE_DIR=$PROJECT_ROOT/checkpoints/roberta.large.mnli/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
+SEED=0
 TASK=MRPC
 TAG=Baseline
 
@@ -22,7 +23,7 @@ LR=1e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=2
 MAX_SENTENCES=16        # Batch size.
 
-OUTPUT=$PROJECT_ROOT/checkpoints/${TASK}/${EPOCH}_${LR}_${TAG}_$(date +%F)_$(date +%H)-$(date +%M)
+OUTPUT=$PROJECT_ROOT/checkpoints/${TASK}/${EPOCH}_${LR}_${TAG}_${SEED}
 [ -e $OUTPUT/script  ] || mkdir -p $OUTPUT/script
 cp -f $(readlink -f "$0") $OUTPUT/script
 rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclude 'data' $PROJECT_ROOT/ $OUTPUT/src
@@ -48,4 +49,6 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --max-epoch $EPOCH \
 --valid-subset valid,valid1 \
 --user-dir ./mymodule \
---best-checkpoint-metric f1 --maximize-best-checkpoint-metric;
+--best-checkpoint-metric f1 --maximize-best-checkpoint-metric \
+--no-last-checkpoints --no-save-optimizer-state \
+--seed $SEED

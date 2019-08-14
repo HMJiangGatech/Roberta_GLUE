@@ -18,7 +18,7 @@ TASK=WSC
 TAG=Baseline_Base
 
 TOTAL_NUM_UPDATES=2000  # 10 epochs through RTE for bsz 16
-EPOCH=10          # total epoches
+EPOCH=58          # total epoches
 WARMUP_UPDATES=250      # 6 percent of the number of updates
 LR=2e-05                # Peak LR for polynomial LR scheduler.
 MAX_SENTENCES=16        # Batch size.
@@ -34,7 +34,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK/ \
 --max-positions 512 \
 --reset-optimizer --reset-dataloader --reset-meters \
 --save-dir $OUTPUT \
---no-epoch-checkpoints --no-last-checkpoints --no-save-optimizer-state \
+--keep-last-epochs 10 --no-last-checkpoints --no-save-optimizer-state \
 --best-checkpoint-metric accuracy --maximize-best-checkpoint-metric \
 --valid-subset val \
 --fp16 --ddp-backend no_c10d \

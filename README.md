@@ -1,8 +1,9 @@
 ## Base
 
-| Model              | MNLI    | QNLI | QQP  | RTE  | SST-2| MRPC      | CoLA | STS-B|
+| Model              | MNLI    | QNLI | QQP       | RTE  | SST-2| MRPC      | CoLA | STS-B|
 |---|---|---|---|---|---|---|---|---|
-|`roberta.base` dev  |         | 92.6 |      |      | 96.0 |           | 59.8 |      |
+|`roberta.base` dev  |         | 92.6 | 91.8,89.0 |      | 96.0 |           | 59.8 |      |
+| forget        dev  |         | 92.6 |           |      | 96.0 |           | 60.8 |      |
 
 
 

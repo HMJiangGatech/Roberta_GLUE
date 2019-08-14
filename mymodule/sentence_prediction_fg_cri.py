@@ -39,7 +39,9 @@ class SentencePredictionFGCriterion(FairseqCriterion):
             with torch.no_grad():
                 features, extra = hist_model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
             features = features.detach()
-            extra = [t.detach() for t in extra]
+            for t in extra:
+                if hasattr(extra[t],'detach'):
+                    extra[t].detach()
         if returnfull:
             features = features.transpose(0, 1)
         padding_mask = sample['net_input']['src_tokens'].eq(self.padding_idx)

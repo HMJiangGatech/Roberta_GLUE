@@ -23,7 +23,7 @@ wget https://hmjianggatech.github.io/files/data/SST-2/test_org_labeled.tsv -O $G
 wget https://hmjianggatech.github.io/files/data/SST-2/train_new.tsv -O $GLUE_DATA_FOLDER/SST-2/train.tsv
 wget https://hmjianggatech.github.io/files/data/STS-B/dev_glod.tsv -O $GLUE_DATA_FOLDER/STS-B/dev_glod.tsv
 # cat sts-test.tsv| awk -F'\t' {'printf("%d\t%s\t%s\t%s\t%s\tnone\tnone\t%s\t%s\t%s\n",NR-1,$1,$2,$3,$4,$6,$7,$5)'}
-cp $GLUE_DATA_FOLDER/MRPC/msr_paraphrase_test.txt $GLUE_DATA_FOLDER/MRPC/dev_glod.tsv
+cp $GLUE_DATA_FOLDER/MRPC/msr_paraphrase_test.txt $GLUE_DATA_FOLDER/MRPC/dev.tsv
 cp mrpc-train.tsv $GLUE_DATA_FOLDER/MRPC/train.tsv
 
 
@@ -62,7 +62,6 @@ do
     LABEL_COLUMN=4
   elif [ "$TASK" = "MRPC" ]
   then
-    SPLITS="train dev dev_glod test"
     INPUT_COLUMNS=( 4 5 )
     TEST_INPUT_COLUMNS=( 4 5 )
     LABEL_COLUMN=1
@@ -165,7 +164,7 @@ do
     TESTPREF="$TASK_DATA_FOLDER/processed/test_matched.LANG,$TASK_DATA_FOLDER/processed/test_mismatched.LANG"
   fi
 
-  if [ "$TASK" = "MRPC" ] || [ "$TASK" = "STS-B"  ]
+  if [ "$TASK" = "STS-B"  ]
   then
     DEVPREF="$TASK_DATA_FOLDER/processed/dev.LANG,$TASK_DATA_FOLDER/processed/dev_glod.LANG"
   fi

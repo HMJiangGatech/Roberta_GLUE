@@ -9,7 +9,7 @@ fi
 echo "Run on GPU $GPUID"
 
 PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
-ROBERTA_base_DIR=$PROJECT_ROOT/checkpoints/roberta.base.mnli/model.pt
+ROBERTA_base_DIR=$PROJECT_ROOT/checkpoints/roberta.base/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
 SEED=0
@@ -47,7 +47,6 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \
 --fp16 --fp16-init-scale 4 --threshold-loss-scale 1 --fp16-scale-window 128 \
 --max-epoch $EPOCH \
---valid-subset valid,valid1 \
 --user-dir ./mymodule \
 --best-checkpoint-metric f1 --maximize-best-checkpoint-metric \
 --no-last-checkpoints --no-save-optimizer-state \

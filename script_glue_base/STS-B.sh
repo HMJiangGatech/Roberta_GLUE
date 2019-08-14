@@ -9,7 +9,7 @@ fi
 echo "Run on GPU $GPUID"
 
 PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
-ROBERTA_base_DIR=$PROJECT_ROOT/checkpoints/roberta.base.mnli/model.pt
+ROBERTA_base_DIR=$PROJECT_ROOT/checkpoints/roberta.base/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
 SEED=0
@@ -52,4 +52,5 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --best-checkpoint-metric PeSp --maximize-best-checkpoint-metric \
 --no-last-checkpoints --no-save-optimizer-state \
 --find-unused-parameters \
+--valid-subset valid,valid1 \
 --seed $SEED

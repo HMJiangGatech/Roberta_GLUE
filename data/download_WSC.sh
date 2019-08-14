@@ -4,3 +4,5 @@ rm WSC.zip
 
 # we also need to copy the RoBERTa dictionary into the same directory
 wget -O WSC/dict.txt https://dl.fbaipublicfiles.com/fairseq/gpt2_bpe/dict.txt
+
+cp wsc_test_glue.jsonl WSC/test_glue.jsonl

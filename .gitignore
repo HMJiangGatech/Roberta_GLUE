@@ -1,4 +1,5 @@
 checkpoints/
+glue_submission/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

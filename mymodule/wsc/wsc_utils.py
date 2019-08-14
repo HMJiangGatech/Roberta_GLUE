@@ -164,6 +164,9 @@ def jsonl_iterator(input_fname, positive_only=False, ngram_order=3, eval=False):
                 # convert to format where pronoun is surrounded by "[]" and
                 # query is surrounded by "_"
                 query_span = find_span(sentence, query)
+                if query_span is None:
+                    yield None, None
+                    continue
                 query_with_ws = '_{}_{}'.format(
                     query_span.text,
                     (' ' if query_span.text_with_ws.endswith(' ') else '')

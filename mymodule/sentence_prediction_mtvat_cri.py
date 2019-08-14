@@ -90,6 +90,8 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
                     preds=np.copy(logits.detach().cpu().squeeze().numpy()),
                     targets=np.copy(targets.detach().cpu().squeeze().numpy())
                 )
+                if sample_size==1:
+                    import pdb;pdb.set_trace()
         if returnfull:
             return loss, sample_size, logging_output, logits, extra['inner_states'][0]
         else:

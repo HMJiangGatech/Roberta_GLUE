@@ -21,7 +21,7 @@ wget -N 'https://dl.fbaipublicfiles.com/fairseq/gpt2_bpe/dict.txt'
 
 wget https://hmjianggatech.github.io/files/data/SST-2/test_org_labeled.tsv -O $GLUE_DATA_FOLDER/SST-2/dev.tsv
 wget https://hmjianggatech.github.io/files/data/SST-2/train_new.tsv -O $GLUE_DATA_FOLDER/SST-2/train.tsv
-wget https://hmjianggatech.github.io/files/data/STS-B/dev_glod.tsv -O $GLUE_DATA_FOLDER/STS-B/dev_glod.tsv
+wget https://hmjianggatech.github.io/files/data/STS-B/dev_glod.tsv -O $GLUE_DATA_FOLDER/STS-B/dev.tsv
 wget https://raw.githubusercontent.com/HMJiangGatech/HMJiangGatech.github.io/master/files/data/STS-B/train_new.tsv?token=AHBGLATXW5E4A4DXXKQYYH25LUE2U -O $GLUE_DATA_FOLDER/STS-B/train.tsv
 # cat sts-test.tsv| awk -F'\t' {'printf("%d\t%s\t%s\t%s\t%s\tnone\tnone\t%s\t%s\t%s\n",NR-1,$1,$2,$3,$4,$6,$7,$5)'}
 cp $GLUE_DATA_FOLDER/MRPC/msr_paraphrase_test.txt $GLUE_DATA_FOLDER/MRPC/dev.tsv
@@ -73,7 +73,6 @@ do
     LABEL_COLUMN=4
   elif [ "$TASK" = "STS-B" ]
   then
-    SPLITS="train dev dev_glod test"
     INPUT_COLUMNS=( 8 9 )
     TEST_INPUT_COLUMNS=( 8 9 )
     LABEL_COLUMN=10
@@ -165,10 +164,6 @@ do
     TESTPREF="$TASK_DATA_FOLDER/processed/test_matched.LANG,$TASK_DATA_FOLDER/processed/test_mismatched.LANG"
   fi
 
-  if [ "$TASK" = "STS-B"  ]
-  then
-    DEVPREF="$TASK_DATA_FOLDER/processed/dev.LANG,$TASK_DATA_FOLDER/processed/dev_glod.LANG"
-  fi
   # Run fairseq preprocessing:
   for INPUT_TYPE in $(seq 0 $((INPUT_COUNT-1)))
   do
@@ -195,6 +190,5 @@ do
     mkdir "$TASK-bin/label"
     awk '{print $1 / 5.0 }' "$TASK_DATA_FOLDER/processed/train.label" > "$TASK-bin/label/train.label"
     awk '{print $1 / 5.0 }' "$TASK_DATA_FOLDER/processed/dev.label" > "$TASK-bin/label/valid.label"
-    awk '{print $1 / 5.0 }' "$TASK_DATA_FOLDER/processed/dev_glod.label" > "$TASK-bin/label/valid1.label"
   fi
 done

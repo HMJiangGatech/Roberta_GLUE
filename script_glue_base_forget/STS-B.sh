@@ -16,9 +16,9 @@ SEED=0
 TASK=STS-B
 TAG=Forget_Base
 
-TOTAL_NUM_UPDATES=3598  # 10 epochs through RTE for bsz 16
+TOTAL_NUM_UPDATES=4530  # 10 epochs through RTE for bsz 16
 EPOCH=10          # total epoches
-WARMUP_UPDATES=214      # 6 percent of the number of updates
+WARMUP_UPDATES=272      # 6 percent of the number of updates
 LR=2e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=1
 MAX_SENTENCES=16        # Batch size.

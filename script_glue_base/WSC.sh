@@ -28,7 +28,8 @@ OUTPUT=$PROJECT_ROOT/checkpoints/${TASK}/${EPOCH}_${LR}_${TAG}_${SEED}
 cp -f $(readlink -f "$0") $OUTPUT/script
 rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclude 'data' $PROJECT_ROOT/ $OUTPUT/src
 
-CUDA_VISIBLE_DEVICES=$GPUID fairseq-train $DATA_ROOT/$TASK/ \
+CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK/ \
+--save-dir $OUTPUT \
 --restore-file $ROBERTA_base_DIR \
 --max-positions 512 \
 --reset-optimizer --reset-dataloader --reset-meters \
@@ -45,6 +46,6 @@ CUDA_VISIBLE_DEVICES=$GPUID fairseq-train $DATA_ROOT/$TASK/ \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \
 --max-epoch $EPOCH \
 --max-sentences $MAX_SENTENCES \
---log-format simple --log-interval 100 \
+--num-workers 0 \
 --seed $SEED
 

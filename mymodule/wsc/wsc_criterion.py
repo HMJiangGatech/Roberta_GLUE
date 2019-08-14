@@ -8,6 +8,8 @@ import math
 import torch
 import torch.nn.functional as F
 
+import numpy as np
+
 from fairseq import utils
 from fairseq.data import encoders
 from fairseq.criterions import FairseqCriterion, register_criterion
@@ -39,7 +41,7 @@ class WSCCriterion(FairseqCriterion):
         parser.add_argument('--save-predictions', metavar='FILE',
                             help='file to save predictions to')
 
-    def forward(self, model, sample, reduce=True):
+    def forward(self, model, sample, reduce=True, save_all = True):
 
         def get_masked_input(tokens, mask):
             masked_tokens = tokens.clone()
@@ -57,6 +59,7 @@ class WSCCriterion(FairseqCriterion):
         # compute loss and accuracy
         loss, nloss = 0., 0
         ncorrect, nqueries = 0, 0
+        preds = []
         for i, label in enumerate(sample['labels']):
             query_lprobs = get_lprobs(
                 sample['query_tokens'][i].unsqueeze(0),
@@ -91,6 +94,7 @@ class WSCCriterion(FairseqCriterion):
                     ).sum()
 
             id = sample['id'][i].item()
+            preds.append(pred)
             if self.prediction_h is not None:
                 print('{}\t{}\t{}'.format(id, pred, label), file=self.prediction_h)
 
@@ -106,6 +110,12 @@ class WSCCriterion(FairseqCriterion):
             'ncorrect': ncorrect,
             'nqueries': nqueries,
         }
+        if save_all:
+            logging_output.update(
+                preds_ids=np.copy(sample['id'].cpu().squeeze().numpy()),
+                preds=np.array(preds),
+                targets=np.array(sample['labels'])
+            )
         return loss, sample_size, logging_output
 
     @staticmethod
@@ -128,4 +138,8 @@ class WSCCriterion(FairseqCriterion):
         if nqueries > 0:
             agg_output['accuracy'] = ncorrect / float(nqueries)
 
+        if 'preds' in logging_outputs[0]:
+            agg_output.update(preds=np.concatenate([log.get('preds', np.empty(0)) for log in logging_outputs]))
+            agg_output.update(targets=np.concatenate([log.get('targets', np.empty(0)) for log in logging_outputs]))
+            agg_output.update(pred_ids=np.concatenate([log.get('pred_ids', np.empty(0)) for log in logging_outputs]))
         return agg_output

@@ -270,9 +270,6 @@ def validate(args, trainer, task, epoch_itr, subsets):
         preds = np.concatenate(preds)
         pred_ids = np.concatenate(pred_ids).astype(int)
         targets = np.concatenate(targets)
-        if not args.regression_target:
-            preds = preds.astype(int)
-            targets = targets.astype(int)
         if args.best_checkpoint_metric == 'mcc':
             extra_meters['mcc'].update(matthews_corrcoef(targets, preds))
         if args.best_checkpoint_metric == 'f1':

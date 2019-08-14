@@ -2,13 +2,25 @@
 
 | Model              | MNLI    | QNLI | QQP  | RTE  | SST-2| MRPC      | CoLA | STS-B|
 |---|---|---|---|---|---|---|---|---|
-|`roberta.base` dev  | 87.6, ? | 92.8 | 91.9 | 78.7 | 94.8 | 90.2      | 63.6 | 91.2 |
+|`roberta.base` dev  |         | 92.6 |      |      | 96.0 |           | 59.8 |      |
 
 
 
 
+## Reported Results
+
+##### Results on GLUE tasks (dev set, single model, single-task finetuning)
+
+Model | MNLI | QNLI | QQP | RTE | SST-2 | MRPC | CoLA | STS-B
+---|---|---|---|---|---|---|---|---
+`roberta.base` | 87.6 | 92.8 | 91.9 | 78.7 | 94.8 | 90.2 | 63.6 | 91.2
+`roberta.large` | 90.2 | 94.7 | 92.2 | 86.6 | 96.4 | 90.9 | 68.0 | 92.4
+`roberta.large.mnli` | 90.2 | - | - | - | - | - | - | -
 
 
+
+
+## MTVAT
 ## Base
 
 | Model | MNLI | QNLI | QQP | RTE | SST-2 | MRPC | CoLA | STS-B|

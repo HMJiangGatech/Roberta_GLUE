@@ -1,3 +1,15 @@
+## Usage
+
+**Model Training** Example: Run base model on CoLA task using GPU No. 3:
+`./script_glue_base/CoLA.sh 3` (no need for `sh xx.sh`, it will be problematic with zsh)
+
+**Handling Forgetting** Scripts are in `script_glue_base_forget`. The function is implemented in `mymodule/sentence_prediction_fg.py` (`train_step`) and `mymodule/sentence_prediction_fg_cri.py` (`forward`). 
+*TODO*: WSC is not implemented, since it uses different `task` and `criterion` file. 
+
+**Create Submission File** `python eval_glue.py --task TASK_NAME --ckpdir path/to/checkpointpython eval_glue.py --task TASK_NAME --ckp path/to/checkpoint.pt`, the script is `./script_glue_base/create_submit.sh GPU_ID`
+
+*TODO* Large model, the distibuted data parallel is problematic. 
+
 ## Base
 
 | Model        | MNLI      | QNLI | QQP       | RTE  | SST-2| MRPC      | CoLA | STS-B     | WSC  |

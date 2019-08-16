@@ -24,7 +24,7 @@ def teach_class(logit_stu, logit_tea, class_name, _lambda):
         logprob_tea = F.log_softmax(logit_tea, 1)
         return F.mse_loss(logprob_tea.exp(),logprob_stu.exp())*_lambda
     elif class_name == "logit":
-        return F.mse_loss(logit_stu,logit_tea)*_lambda
+        return F.mse_loss(logit_stu.view(-1),logit_tea.view(-1))*_lambda
     elif class_name == "smart":
         prob_stu = F.log_softmax(logit_stu, 1).exp()
         prob_tea = F.log_softmax(logit_tea, 1).exp()

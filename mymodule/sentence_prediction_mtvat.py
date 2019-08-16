@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-
+import math
 import numpy as np
 
 from fairseq.data import (
@@ -268,7 +268,7 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
             if self.args.teacher_class == 'smart':
                 _lambda = self.args.mean_teacher_lambda # 1, important
             else:
-                _lambda = self.args.mean_teacher_lambda * min(1,math.exp(-5*(1-acc_steps/self.args.mean_teacher_rampup)**2))
+                _lambda = self.args.mean_teacher_lambda * min(1,math.exp(-5*(1-self.global_trainstep/self.args.mean_teacher_rampup)**2))
             mt_loss = teach_class(logits,teacher_logits,self.args.teacher_class,_lambda)
             logging_output.update(
                 mt_loss=mt_loss.item()

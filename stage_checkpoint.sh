@@ -47,6 +47,7 @@ do
                         case $yn in
                             [Y]* )
                                 echo "stage $CKPDIR to $NEW_CKPDIR"
+                                rm -rf $NEW_CKPDIR
                                 mv $CKPDIR $NEW_CKPDIR
                                 break;;
                             [n]* ) break;;

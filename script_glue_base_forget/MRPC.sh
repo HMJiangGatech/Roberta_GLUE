@@ -9,7 +9,7 @@ fi
 echo "Run on GPU $GPUID"
 
 PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
-ROBERTA_base_DIR=$PROJECT_ROOT/checkpoints/roberta.base.mnli/model.pt
+ROBERTA_base_DIR=$PROJECT_ROOT/checkpoints/roberta.base/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
 SEED=0

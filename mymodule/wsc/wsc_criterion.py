@@ -8,8 +8,6 @@ import math
 import torch
 import torch.nn.functional as F
 
-import numpy as np
-
 from fairseq import utils
 from fairseq.data import encoders
 from fairseq.criterions import FairseqCriterion, register_criterion
@@ -41,31 +39,47 @@ class WSCCriterion(FairseqCriterion):
         parser.add_argument('--save-predictions', metavar='FILE',
                             help='file to save predictions to')
 
+    def get_masked_input(self, tokens, mask):
+        masked_tokens = tokens.clone()
+        masked_tokens[mask] = self.task.mask
+        return masked_tokens
+
+    def get_lprobs(self, model, tokens, mask):
+        logits, _ = model(src_tokens=self.get_masked_input(tokens, mask))
+        lprobs = F.log_softmax(logits, dim=-1, dtype=torch.float)
+        scores = lprobs.gather(2, tokens.unsqueeze(-1)).squeeze(-1)
+        mask = mask.type_as(scores)
+        scores = (scores * mask).sum(dim=-1) / mask.sum(dim=-1)
+        return scores
+
+    def get_loss(self, query_lprobs, cand_lprobs):
+        if self.args.wsc_cross_entropy:
+            return F.cross_entropy(
+                torch.cat([query_lprobs, cand_lprobs]).unsqueeze(0),
+                query_lprobs.new([0]).long(),
+            )
+        else:
+            return (
+                - query_lprobs
+                + self.args.wsc_margin_alpha * (
+                    cand_lprobs - query_lprobs + self.args.wsc_margin_beta
+                ).clamp(min=0)
+            ).sum()
+
     def forward(self, model, sample, reduce=True, save_all = True):
-
-        def get_masked_input(tokens, mask):
-            masked_tokens = tokens.clone()
-            masked_tokens[mask] = self.task.mask
-            return masked_tokens
-
-        def get_lprobs(tokens, mask):
-            logits, _ = model(src_tokens=get_masked_input(tokens, mask))
-            lprobs = F.log_softmax(logits, dim=-1, dtype=torch.float)
-            scores = lprobs.gather(2, tokens.unsqueeze(-1)).squeeze(-1)
-            mask = mask.type_as(scores)
-            scores = (scores * mask).sum(dim=-1) / mask.sum(dim=-1)
-            return scores
-
         # compute loss and accuracy
         loss, nloss = 0., 0
         ncorrect, nqueries = 0, 0
         preds = []
+
         for i, label in enumerate(sample['labels']):
-            query_lprobs = get_lprobs(
+            query_lprobs = self.get_lprobs(
+                model,
                 sample['query_tokens'][i].unsqueeze(0),
                 sample['query_masks'][i].unsqueeze(0),
             )
-            cand_lprobs = get_lprobs(
+            cand_lprobs = self.get_lprobs(
+                model,
                 sample['candidate_tokens'][i],
                 sample['candidate_masks'][i],
             )
@@ -80,18 +94,7 @@ class WSCCriterion(FairseqCriterion):
             if label:
                 # only compute a loss for positive instances
                 nloss += 1
-                if self.args.wsc_cross_entropy:
-                    loss += F.cross_entropy(
-                        torch.cat([query_lprobs, cand_lprobs]).unsqueeze(0),
-                        query_lprobs.new([0]).long(),
-                    )
-                else:
-                    loss += (
-                        - query_lprobs
-                        + self.args.wsc_margin_alpha * (
-                            cand_lprobs - query_lprobs + self.args.wsc_margin_beta
-                        ).clamp(min=0)
-                    ).sum()
+                loss += self.get_loss(query_lprobs, cand_lprobs)
 
             id = sample['id'][i].item()
             preds.append(pred)
@@ -143,3 +146,39 @@ class WSCCriterion(FairseqCriterion):
             agg_output.update(targets=np.concatenate([log.get('targets', np.empty(0)) for log in logging_outputs]))
             agg_output.update(pred_ids=np.concatenate([log.get('pred_ids', np.empty(0)) for log in logging_outputs]))
         return agg_output
+
+
+@register_criterion('winogrande')
+class WinograndeCriterion(WSCCriterion):
+    def forward(self, model, sample, reduce=True, save_all = True):
+        # compute loss and accuracy
+        query_lprobs = self.get_lprobs(
+            model,
+            sample['query_tokens'],
+            sample['query_masks'],
+        )
+        cand_lprobs = self.get_lprobs(
+            model,
+            sample['candidate_tokens'],
+            sample['candidate_masks'],
+        )
+        pred = query_lprobs >= cand_lprobs
+        loss = self.get_loss(query_lprobs, cand_lprobs)
+
+        sample_size = sample['query_tokens'].size(0)
+        ncorrect = pred.sum().item()
+        logging_output = {
+            'loss': utils.item(loss.data) if reduce else loss.data,
+            'ntokens': sample['ntokens'],
+            'nsentences': sample['nsentences'],
+            'sample_size': sample_size,
+            'ncorrect': ncorrect,
+            'nqueries': sample_size,
+        }
+        if save_all:
+            logging_output.update(
+                preds_ids=np.copy(sample['id'].cpu().squeeze().numpy()),
+                preds=np.copy(pred.cpu().numpy()),
+                targets=np.array(sample['labels'])
+            )
+        return loss, sample_size, logging_output

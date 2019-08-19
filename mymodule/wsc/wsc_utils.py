@@ -164,9 +164,6 @@ def jsonl_iterator(input_fname, positive_only=False, ngram_order=3, eval=False):
                 # convert to format where pronoun is surrounded by "[]" and
                 # query is surrounded by "_"
                 query_span = find_span(sentence, query)
-                if query_span is None:
-                    yield None, None
-                    continue
                 query_with_ws = '_{}_{}'.format(
                     query_span.text,
                     (' ' if query_span.text_with_ws.endswith(' ') else '')
@@ -191,6 +188,23 @@ def jsonl_iterator(input_fname, positive_only=False, ngram_order=3, eval=False):
                 yield sentence, sample.get('label', None)
             else:
                 yield sentence, pronoun_span, query, sample.get('label', None)
+
+
+def winogrande_jsonl_iterator(input_fname, eval=False):
+    with open(input_fname) as fin:
+        for line in fin:
+            sample = json.loads(line.strip())
+            sentence, option1, option2 = sample['sentence'], sample['option1'],\
+                sample['option2']
+
+            pronoun_span = (sentence.index('_'), sentence.index('_') + 1)
+
+            if eval:
+                query, cand = option1, option2
+            else:
+                query = option1 if sample['answer'] == '1' else option2
+                cand = option2 if sample['answer'] == '1' else option1
+            yield sentence, pronoun_span, query, cand
 
 
 def filter_noun_chunks(chunks, exclude_pronouns=False, exclude_query=None, exact_match=False):

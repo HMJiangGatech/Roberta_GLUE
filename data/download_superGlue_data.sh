@@ -8,7 +8,7 @@ fi
 
 mkdir -p $DATA_FOLDER
 wget -O $DATA_FOLDER/combined.zip https://dl.fbaipublicfiles.com/glue/superglue/data/v2/combined.zip
-unzip $DATA_FOLDER/combined.zip
+unzip $DATA_FOLDER/combined.zip -d $DATA_FOLDER
 rm $DATA_FOLDER/combined.zip
 
 # we also need to copy the RoBERTa dictionary into the same directory

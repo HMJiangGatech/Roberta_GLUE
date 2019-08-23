@@ -15,7 +15,7 @@ from multiprocessing import Pool
 from fairseq.data.encoders.gpt2_bpe import get_encoder
 
 
-def main():
+def main(arguments = None):
     """
     Helper script to encode raw text
     with the GPT-2 BPE using multiple processes.
@@ -48,7 +48,10 @@ def main():
         help="keep empty lines",
     )
     parser.add_argument("--workers", type=int, default=20)
-    args = parser.parse_args()
+    if arguments is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(arguments)
 
     assert len(args.inputs) == len(args.outputs), \
         "number of input and output paths should match"

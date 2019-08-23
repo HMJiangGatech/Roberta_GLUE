@@ -14,11 +14,15 @@ def preprocess(task, args, process_func, splits=["train","val","test"]):
         shutil.rmtree(prodir)
     os.mkdir(prodir)
     for split in splits:
+        input0_file= open(os.path.join(prodiir,split+'.raw.input0'),"w+")
+        input1_file= open(os.path.join(prodiir,split+'.raw.input1'),"w+")
+        label_file = open(os.path.join(prodiir,split+'.label'),"w+")
         input_fname = os.path.join(datadir,split+'.jsonl')
         with open(input_fname) as fin:
             for line in fin:
                 sample = json.loads(line.strip())
-                inputs, label = process_func(sample, split)
+                input0, input1, label = process_func(sample, split)
+                input0_file.write(input1); input0_file.write('\n')
                 pdb.set_trace();
 
 

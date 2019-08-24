@@ -9,5 +9,6 @@ python download_glue_data.py
 # Super Glue Data
 
 ```bash
-./download_superglue_data.sh 
+./download_superglue_data.sh
+python preprocess_superGLUE_data.py <task_name>
 ```

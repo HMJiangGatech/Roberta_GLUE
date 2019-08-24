@@ -7,12 +7,12 @@ from tqdm import tqdm
 from fairseq import options
 
 from multiprocessing_bpe_encoder import main as encoder
+from fairseq_cli.preprocess import main as binarize_func
 
-TASKS = ["AX-b", "AX-g", "BoolQ", "CB", "COPA", "MultiRC", "ReCoRD", "RTE", "WiC"]
+TASKS = ["AX-b", "AX-g", "BoolQ", "CB", "COPA", "MultiRC", "ReCoRD", "RTE"]
 
 
 def binarize(arguments):
-    from preprocess import main as binarize_func
     parser = options.get_preprocessing_parser()
     args = parser.parse_args(arguments)
     binarize_func(args)
@@ -43,6 +43,7 @@ def preprocess(task, args, ninputs, process_func, splits=["train","val","test"],
                     label_file.write(str(label));   label_file.write('\n')
         for i,inputfile in enumerate(inputfiles):
             inputfile.close()
+            print("BPE encoding {}/input{}".format(split,i))
             encoder(["--encoder-json", "encoder.json", "--vocab-bpe", "vocab.bpe",
                     "--inputs" , str(os.path.join(prodir,split+'.raw.input'+str(i))),
                     "--outputs", str(os.path.join(prodir,split+'.input'+str(i))),
@@ -95,18 +96,34 @@ def main(arguments):
 
     assert os.path.isdir(args.data_dir)
     tasks = get_tasks(args.tasks)
-
-    print('Copy preprocess code')
-    shutil.copyfile('../fairseq/preprocess.py', './preprocess.py')
+    #
+    # print('Copy preprocess code')
+    # shutil.copyfile('../fairseq/preprocess.py', './preprocess.py')
 
     if 'Ax-b' in tasks:
         pass
     if 'Ax-g' in tasks:
         pass
     if 'BoolQ' in tasks:
-        pass
+        def process_func(example):
+            try:
+                label = str(example['label'])
+            except:
+                label = -1
+            return [ # one sample
+                    [[example["passage"], example["question"]] , label]
+                    ]
+        preprocess('BoolQ', args, 2, process_func)
     if 'CB' in tasks:
-        pass
+        def process_func(example):
+            try:
+                label = str(example['label'])
+            except:
+                label = -1
+            return [ # one sample
+                    [[example["premise"], example["hypothesis"]] , label]
+                    ]
+        preprocess('CB', args, 2, process_func)
     if 'COPA' in tasks:
         def process_func(example):
             context = example["premise"]
@@ -129,14 +146,51 @@ def main(arguments):
     if 'MultiRC' in tasks:
         pass
     if 'ReCoRD' in tasks:
-        pass
+        def process_func(example):
+            pdb.set_trace()
+            context = example['passage']['text']
+            qas = example['qas']
+
+            entities =  example['passage']['entities']
+            for e in entities:
+                e['text'] = context[e['start'], e['end']+1]
+
+            all_samples = []
+
+            for qa in qas:
+                query = qa['query']
+                answers = qa['answers']
+                answers = [an['text'] for an in answers]
+                for ent in entities:
+                    label = str(ent in answers)
+                    all_samples.append([[context, query.replace('@placeholder',ent)] , label])
+            return all_samples
+        preprocess('ReCoRD', args, 2, process_func, splits=["train","val"],test_splits=[])
     if 'RTE' in tasks:
-        pass
-    if 'WiC' in tasks:
-        pass
-    if 'WSC' in tasks:
-        pass
-    os.remove("preprocess.py")
+        def process_func(example):
+            try:
+                label = str(example['label'])
+            except:
+                label = -1
+            return [ # one sample
+                    [[example["premise"], example["hypothesis"]] , label]
+                    ]
+        preprocess('RTE', args, 2, process_func)
+    # if 'WiC' in tasks:
+    #     def process_func(example):
+    #         pdb.set_trace()
+    #         try:
+    #             label = str(example['label'])
+    #         except:
+    #             label = -1
+    #         return [ # one sample, with inverse
+    #                 [[example["sentence1"], example["sentence2"]] , label],
+    #                 [[example["sentence2"], example["sentence1"]] , label]
+    #                 ]
+    #     preprocess('WiC', args, 2, process_func)
+    # if 'WSC' in tasks:
+    #     pass
+    # os.remove("preprocess.py")
 
 
 if __name__ == '__main__':

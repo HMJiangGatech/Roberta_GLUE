@@ -1,3 +1,5 @@
+#!/bin/bash
+
 wget https://dl.fbaipublicfiles.com/glue/superglue/data/v2/WSC.zip
 unzip WSC.zip
 rm WSC.zip

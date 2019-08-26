@@ -123,20 +123,24 @@ def get_tasks(task_names):
 
 def checkalignment(context, s,e):
     x = context[s:e]
-    context[s]
     try:
         assert  (x.rstrip('.,"\' ;:!?&`_-+=<>[]{}^*/\\|') == x) and \
                 (x.lstrip('.,"\' ;:!?&`_-+=<>[]{}^*/\\|') == x) and \
-                (not context[s-1].isalpha()) and \
-                (not context[e].isalpha())
+                (not context[s-1].isalpha() if s>0 else True) and \
+                (not context[e].isalpha() if e<len(context) else True)
     except:
-        print('\n=============\n', context)
+        if x in ['Google+', 'E!', '-4 Fahrenheit', '\'Chariot\' sculpture',
+                    '-11.1C', '\'brother\' Per' , 'A-', '\'framing\' Masih']:
+            return
+
+        print('=============\n', context)
+        # print('=============')
         print(s, e)
         print(x)
         assert  (x.rstrip('.,"\' ;:!?&`_-+=<>[]{}^*/\\|') == x) and \
                 (x.lstrip('.,"\' ;:!?&`_-+=<>[]{}^*/\\|') == x) and \
-                (not context[s-1].isalpha()) and \
-                (not context[e].isalpha())
+                (not context[s-1].isalpha() if s>0 else True) and \
+                (not context[e].isalpha() if e<len(context) else True)
 
 
 def main(arguments):
@@ -225,7 +229,55 @@ def main(arguments):
             for e in entities:
                 e['end'] += 1
                 e['text'] = context[e['start']: e['end']]
-                checkalignment(context, e['start'], e['end'])
+                if e['text'].endswith('.') or e['text'].endswith('\'') or e['text'].endswith('!'):
+                    e['end'] -= 1
+                if e['text'].startswith('.'):
+                    e['start'] += 1
+                if e['text'] == 're found s':
+                    e['start'] -= 30
+                    e['end'] -= 32
+                if e['start'] == 764 and e['end'] == 771 and e['text'].startswith('derri'):
+                    example['passage']['text'] = context.replace(e['text']+'re', 'derriere')
+                    context = example['passage']['text']
+                    e['end'] +=1
+                if e['text'] == 'yrian ':
+                    e['start'] -= 1
+                    e['end'] -= 1
+                if e['text'] == 'l-Assad ':
+                    e['start'] -= 1
+                    e['end'] -= 1
+                if context.startswith("Ronnie and Donnie Galyon may be th") and e['start']<600 and example['idx']==2360:
+                    e['start'] -= 3
+                    e['end'] -= 3
+                if e['start'] == 590 and e['end'] == 605 and e['text'].startswith('Michael Garcia'):
+                    context=context[:e['end']-1] + '\''+ context[e['end']:]
+                    example['passage']['text'] = context
+                    e['end'] -= 1
+                if e['text'] == 'arth ':
+                    context=' '+ context
+                    example['passage']['text'] = context
+                if e['text'] in ['\nOntari',' Eart']:
+                    e['start'] += 1
+                    e['end'] += 1
+                if e['text'] in ['man so', 'tle of the Seelow Heights ha']:
+                    e['start'] -= 3
+                    e['end'] -= 3
+
+                e['text'] = context[e['start']: e['end']]
+                # if e['text'] == 'he O':
+                #     example['passage']['text'] = context[:e['start']-1]+"   "+context[e['start']-1:]
+                #     context = example['passage']['text']
+                #     e['text'] = context[e['start']: e['end']]
+
+                try:
+                    checkalignment(context, e['start'], e['end'])
+                except:
+                    import pdb; pdb.set_trace()
+            #
+            # try:
+            #     assert example['idx'] != 1827
+            # except:
+            #     import pdb; pdb.set_trace()
 
             all_samples = []
 
@@ -261,6 +313,18 @@ def main(arguments):
         preprocess('RTE', args, 2, process_func)
     if 'WiC' in tasks:
         def process_func(example):
+            if (example['idx'] in [1696,2300,2970,4085,4718] ) and example['word']=='do':
+                example["sentence2"] = example["sentence2"].replace('doesn\'t','does not')
+                checkalignment(example["sentence2"], example['start2'],example['end2'])
+            elif (example['idx'] in [780] ) and example['word']=='do':
+                example["sentence2"] = example["sentence2"].replace('Don\'t','do not')
+                checkalignment(example["sentence2"], example['start2'],example['end2'])
+            elif (example['idx'] in [788] ) and example['word']=='have':
+                example["sentence2"] = example["sentence2"].replace('\'ve',' have')
+                example['start2'] = example['start2']+1
+                example['end2'] = example['end2']+2
+                checkalignment(example["sentence2"], example['start2'],example['end2'])
+
             try:
                 label = str(example['label'])
             except:
@@ -273,19 +337,7 @@ def main(arguments):
             try:
                 checkalignment(example["sentence2"], example['start2'],example['end2'])
             except:
-                if (example['idx'] in [1696,2300,2970,4085,4718] ) and example['word']=='do':
-                    example["sentence2"] = example["sentence2"].replace('doesn\'t','does not')
-                    checkalignment(example["sentence2"], example['start2'],example['end2'])
-                elif (example['idx'] in [780] ) and example['word']=='do':
-                    example["sentence2"] = example["sentence2"].replace('Don\'t','do not')
-                    checkalignment(example["sentence2"], example['start2'],example['end2'])
-                elif (example['idx'] in [788] ) and example['word']=='have':
-                    example["sentence2"] = example["sentence2"].replace('\'ve',' have')
-                    example['start2'] = example['start2']+1
-                    example['end2'] = example['end2']+2
-                    checkalignment(example["sentence2"], example['start2'],example['end2'])
-                else:
-                    import pdb; pdb.set_trace()
+                import pdb; pdb.set_trace()
             return [ # one sample, with inverse
                     [[example["sentence1"], example["sentence2"]] ,
                         [[0, example['start1'],example['end1']] , [1, example['start2'],example['end2']]]

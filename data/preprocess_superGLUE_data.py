@@ -17,7 +17,7 @@ def binarize(arguments):
     args = parser.parse_args(arguments)
     binarize_func(args)
 
-def preprocess(task, args, ninputs, process_func, splits=["train","val","test"],
+def preprocess(task, args, ninputs, process_func, nspans=0, splits=["train","val","test"],
                 train_splits=["train"], val_splits=["val"], test_splits=["test"]):
     print("========Preprocess {}========".format(task))
     datadir = os.path.join(args.data_dir, task)
@@ -31,15 +31,25 @@ def preprocess(task, args, ninputs, process_func, splits=["train","val","test"],
         inputfiles = []
         for i in range(ninputs):
             inputfiles.append( open(os.path.join(prodir,split+'.raw.input'+str(i)),"w") )
+        spanfiles = []
+        for i in range(nspans):
+            spanfiles.append( open(os.path.join(prodir,split+'.raw.span'+str(i)),"w") )
         label_file = open(os.path.join(prodir,split+'.label'),"w")
         input_fname = os.path.join(datadir,split+'.jsonl')
         with open(input_fname) as fin:
             for line in tqdm(fin):
                 example = json.loads(line.strip())
                 propcessed_set = process_func(example)
-                for inputset, label in propcessed_set:
+                for ex in propcessed_set:
+                    if nspans == 0:
+                        inputset, label = ex
+                    else:
+                        inputset, spanset, label = ex
+                        for s, spanfile in zip (spanset,spanfiles):
+                            spanfile.write(inputset[s[0]][:s[1]]); spanfile.write('\n')
+                            spanfile.write(inputset[s[0]][:s[2]]); spanfile.write('\n')
                     for input_sent, inputfile in zip (inputset,inputfiles):
-                        inputfile.write(input_sent); inputfile.write('\n')
+                            inputfile.write(input_sent); inputfile.write('\n')
                     label_file.write(str(label));   label_file.write('\n')
         for i,inputfile in enumerate(inputfiles):
             inputfile.close()
@@ -48,6 +58,23 @@ def preprocess(task, args, ninputs, process_func, splits=["train","val","test"],
                     "--inputs" , str(os.path.join(prodir,split+'.raw.input'+str(i))),
                     "--outputs", str(os.path.join(prodir,split+'.input'+str(i))),
                     "--workers", "60", "--keep-empty" ])
+        for i,spanfile in enumerate(spanfiles):
+            spanfile.close()
+            print("BPE encoding {}/input{} for counting position".format(split,i))
+            encoder(["--encoder-json", "encoder.json", "--vocab-bpe", "vocab.bpe",
+                    "--inputs" , str(os.path.join(prodir,split+'.raw.span'+str(i))),
+                    "--outputs", str(os.path.join(prodir,split+'.tmp.span'+str(i))),
+                    "--workers", "60", "--keep-empty" ])
+            with open(os.path.join(prodir,split+'.span'+str(i)),"w") as fout:
+                with open(os.path.join(prodir,split+'.tmp.span'+str(i))) as fin:
+                    start_pos = None
+                    for line in tqdm(fin):
+                        tokens = line.split()
+                        if start_pos is None:
+                            start_pos = len(tokens)
+                        else:
+                            fout.write('{}\t{}\n'.format(start_pos, len(tokens)))
+                            start_pos = None
         label_file.close()
 
     if os.path.isdir("{}-bin".format(task)):
@@ -75,6 +102,13 @@ def preprocess(task, args, ninputs, process_func, splits=["train","val","test"],
     binarize_args += ["--destdir", "{}-bin/label".format(task), "--workers", "10"]
     binarize(binarize_args)
 
+    # Copy
+    os.mkdir("{}-bin/span".format(task))
+    for split in train_splits+val_splits+test_splits:
+        for i in range(nspans):
+            shutil.copyfile(os.path.join(prodir,split+'.span'+str(i)),
+                            os.path.join("{}-bin/span".format(task),split+'.span'+str(i)))
+
 
 def get_tasks(task_names):
     task_names = task_names.split(',')
@@ -87,11 +121,29 @@ def get_tasks(task_names):
             tasks.append(task_name)
     return tasks
 
+def checkalignment(context, s,e):
+    x = context[s:e]
+    context[s]
+    try:
+        assert  (x.rstrip('.,"\' ;:!?&`_-+=<>[]{}^*/\\|') == x) and \
+                (x.lstrip('.,"\' ;:!?&`_-+=<>[]{}^*/\\|') == x) and \
+                (not context[s-1].isalpha()) and \
+                (not context[e].isalpha())
+    except:
+        print('\n=============\n', context)
+        print(s, e)
+        print(x)
+        assert  (x.rstrip('.,"\' ;:!?&`_-+=<>[]{}^*/\\|') == x) and \
+                (x.lstrip('.,"\' ;:!?&`_-+=<>[]{}^*/\\|') == x) and \
+                (not context[s-1].isalpha()) and \
+                (not context[e].isalpha())
+
+
 def main(arguments):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', help='directory to save data to', type=str, default='superglue_data')
     parser.add_argument('--tasks', help='tasks to be preprocess',
                         type=str, default='all')
+    parser.add_argument('--data_dir', help='directory to save data to', type=str, default='superglue_data')
     args = parser.parse_args(arguments)
 
     assert os.path.isdir(args.data_dir)
@@ -171,7 +223,9 @@ def main(arguments):
 
             entities =  example['passage']['entities']
             for e in entities:
-                e['text'] = context[e['start'], e['end']+1]
+                e['end'] += 1
+                e['text'] = context[e['start']: e['end']]
+                checkalignment(context, e['start'], e['end'])
 
             all_samples = []
 
@@ -184,12 +238,17 @@ def main(arguments):
                     pass
                 for ent in entities:
                     try:
-                        label = str(ent in answers)
+                        label = str(ent['text'] in answers)
                     except:
                         label = -1
-                    all_samples.append([[context, query.replace('@placeholder',ent)] , label])
+                    new_query = query.replace('@placeholder',ent['text'])
+                    query_ent_start = query.find('@placeholder')
+                    query_ent_end   = query_ent_start+ent['end']-ent['start']
+                    all_samples.append([[context, new_query] ,
+                                            [[0, ent['start'],ent['end']] , [1, query_ent_start, query_ent_end]],
+                                            label])
             return all_samples
-        preprocess('ReCoRD', args, 2, process_func)
+        preprocess('ReCoRD', args, 2, process_func, nspans=2)
     if 'RTE' in tasks:
         def process_func(example):
             try:
@@ -201,19 +260,41 @@ def main(arguments):
                     ]
         preprocess('RTE', args, 2, process_func)
     if 'WiC' in tasks:
-        # TODO: need to save span
-        raise NotImplementedError("Need to Save Span")
         def process_func(example):
-            pdb.set_trace()
             try:
                 label = str(example['label'])
             except:
                 label = -1
+            try:
+                checkalignment(example["sentence1"], example['start1'],example['end1'])
+            except:
+                import pdb; pdb.set_trace()
+
+            try:
+                checkalignment(example["sentence2"], example['start2'],example['end2'])
+            except:
+                if (example['idx'] in [1696,2300,2970,4085,4718] ) and example['word']=='do':
+                    example["sentence2"] = example["sentence2"].replace('doesn\'t','does not')
+                    checkalignment(example["sentence2"], example['start2'],example['end2'])
+                elif (example['idx'] in [780] ) and example['word']=='do':
+                    example["sentence2"] = example["sentence2"].replace('Don\'t','do not')
+                    checkalignment(example["sentence2"], example['start2'],example['end2'])
+                elif (example['idx'] in [788] ) and example['word']=='have':
+                    example["sentence2"] = example["sentence2"].replace('\'ve',' have')
+                    example['start2'] = example['start2']+1
+                    example['end2'] = example['end2']+2
+                    checkalignment(example["sentence2"], example['start2'],example['end2'])
+                else:
+                    import pdb; pdb.set_trace()
             return [ # one sample, with inverse
-                    [[example["sentence1"], example["sentence2"]] , label],
-                    [[example["sentence2"], example["sentence1"]] , label]
+                    [[example["sentence1"], example["sentence2"]] ,
+                        [[0, example['start1'],example['end1']] , [1, example['start2'],example['end2']]]
+                        , label],
+                    [[example["sentence2"], example["sentence1"]] ,
+                        [[0, example['start2'],example['end2']] , [1, example['start1'],example['end1']]]
+                        , label]
                     ]
-        preprocess('WiC', args, 2, process_func)
+        preprocess('WiC', args, 2, process_func, nspans=2)
     # if 'WSC' in tasks:
     #     pass
     # os.remove("preprocess.py")

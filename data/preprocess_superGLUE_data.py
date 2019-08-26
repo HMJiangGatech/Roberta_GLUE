@@ -220,7 +220,7 @@ def main(arguments):
         preprocess('MultiRC', args, 2, process_func)
     if 'ReCoRD' in tasks:
         # TODO: need to save span
-        # raise NotImplementedError("Need to Save Span")
+        raise NotImplementedError("Too many noise")
         def process_func(example):
             context = example['passage']['text']
             qa_pairs = example['qas']

@@ -35,7 +35,7 @@ Model | MNLI | QNLI | QQP | RTE | SST-2 | MRPC | CoLA | STS-B
 
 Model | BoolQ | CB | RTE
 ---|---|---|---
-`roberta.base` | 80.3 | 96.8 | 83.0 
+`roberta.mnli.base` | 81.9 | 96.8 | 85.8 
 
 
 

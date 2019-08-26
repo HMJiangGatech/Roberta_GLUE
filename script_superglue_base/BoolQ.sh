@@ -10,6 +10,7 @@ echo "Run on GPU $GPUID"
 
 PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
 ROBERTA_base_DIR=$PROJECT_ROOT/checkpoints/roberta.base/model.pt
+ROBERTA_mnli_pretrained_DIR=$PROJECT_ROOT/checkpoints/MNLI/10_1e-05_Baseline_Base_0_staged/checkpoint3.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
 SEED=0
@@ -31,7 +32,7 @@ rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclud
 
 CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --save-dir $OUTPUT \
---restore-file $ROBERTA_base_DIR \
+--restore-file $ROBERTA_mnli_pretrained_DIR \
 --max-positions 512 \
 --max-sentences $MAX_SENTENCES \
 --max-tokens 4400 \

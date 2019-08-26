@@ -9,7 +9,7 @@ from fairseq import options
 from multiprocessing_bpe_encoder import main as encoder
 from fairseq_cli.preprocess import main as binarize_func
 
-TASKS = ["AX-b", "AX-g", "BoolQ", "CB", "COPA", "MultiRC", "ReCoRD", "RTE"]
+TASKS = ["AX-b", "AX-g", "BoolQ", "CB", "COPA", "MultiRC", "ReCoRD", "RTE" ,"WiC"]
 
 
 def binarize(arguments):
@@ -144,12 +144,30 @@ def main(arguments):
                     ]
         preprocess('COPA', args, 3, process_func)
     if 'MultiRC' in tasks:
-        pass
-    if 'ReCoRD' in tasks:
         def process_func(example):
-            pdb.set_trace()
+            passage = example['passage']
+            context = passage['text']
+            qa_pairs = passage['questions']
+
+            all_samples = []
+
+            for qa in qa_pairs:
+                query = qa['question']
+                answers = qa['answers']
+                for ans in answers:
+                    try:
+                        label = ans['label']
+                    except:
+                        label = -1
+                    all_samples.append([[context, query + ' ' + ans['text']] , label])
+            return all_samples
+        preprocess('MultiRC', args, 2, process_func)
+    if 'ReCoRD' in tasks:
+        # TODO: need to save span
+        # raise NotImplementedError("Need to Save Span")
+        def process_func(example):
             context = example['passage']['text']
-            qas = example['qas']
+            qa_pairs = example['qas']
 
             entities =  example['passage']['entities']
             for e in entities:
@@ -157,15 +175,21 @@ def main(arguments):
 
             all_samples = []
 
-            for qa in qas:
+            for qa in qa_pairs:
                 query = qa['query']
-                answers = qa['answers']
-                answers = [an['text'] for an in answers]
+                try:
+                    answers = qa['answers']
+                    answers = [an['text'] for an in answers]
+                except:
+                    pass
                 for ent in entities:
-                    label = str(ent in answers)
+                    try:
+                        label = str(ent in answers)
+                    except:
+                        label = -1
                     all_samples.append([[context, query.replace('@placeholder',ent)] , label])
             return all_samples
-        preprocess('ReCoRD', args, 2, process_func, splits=["train","val"],test_splits=[])
+        preprocess('ReCoRD', args, 2, process_func)
     if 'RTE' in tasks:
         def process_func(example):
             try:
@@ -176,18 +200,20 @@ def main(arguments):
                     [[example["premise"], example["hypothesis"]] , label]
                     ]
         preprocess('RTE', args, 2, process_func)
-    # if 'WiC' in tasks:
-    #     def process_func(example):
-    #         pdb.set_trace()
-    #         try:
-    #             label = str(example['label'])
-    #         except:
-    #             label = -1
-    #         return [ # one sample, with inverse
-    #                 [[example["sentence1"], example["sentence2"]] , label],
-    #                 [[example["sentence2"], example["sentence1"]] , label]
-    #                 ]
-    #     preprocess('WiC', args, 2, process_func)
+    if 'WiC' in tasks:
+        # TODO: need to save span
+        raise NotImplementedError("Need to Save Span")
+        def process_func(example):
+            pdb.set_trace()
+            try:
+                label = str(example['label'])
+            except:
+                label = -1
+            return [ # one sample, with inverse
+                    [[example["sentence1"], example["sentence2"]] , label],
+                    [[example["sentence2"], example["sentence1"]] , label]
+                    ]
+        preprocess('WiC', args, 2, process_func)
     # if 'WSC' in tasks:
     #     pass
     # os.remove("preprocess.py")

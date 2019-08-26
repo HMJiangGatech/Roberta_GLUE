@@ -31,6 +31,11 @@ Model | MNLI | QNLI | QQP | RTE | SST-2 | MRPC | CoLA | STS-B
 `roberta.large` | 90.2 | 94.7 | 92.2 | 86.6 | 96.4 | 90.9 | 68.0 | 92.4
 `roberta.large.mnli` | 90.2 | - | - | - | - | - | - | -
 
+##### Results on superGLUE tasks (dev set, single model, single-task finetuning
+
+Model | BoolQ | CB | RTE
+---|---|---|---
+`roberta.base` | 80.3 | 96.8 | 83.0 
 
 
 

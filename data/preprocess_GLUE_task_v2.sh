@@ -22,10 +22,10 @@ wget -N 'https://dl.fbaipublicfiles.com/fairseq/gpt2_bpe/dict.txt'
 wget https://hmjianggatech.github.io/files/data/SST-2/test_org_labeled.tsv -O $GLUE_DATA_FOLDER/SST-2/dev.tsv
 wget https://hmjianggatech.github.io/files/data/SST-2/train_new.tsv -O $GLUE_DATA_FOLDER/SST-2/train.tsv
 wget https://hmjianggatech.github.io/files/data/STS-B/dev_glod.tsv -O $GLUE_DATA_FOLDER/STS-B/dev.tsv
-wget https://raw.githubusercontent.com/HMJiangGatech/HMJiangGatech.github.io/master/files/data/STS-B/train_new.tsv?token=AHBGLATXW5E4A4DXXKQYYH25LUE2U -O $GLUE_DATA_FOLDER/STS-B/train.tsv
+wget https://hmjianggatech.github.io/files/data/STS-B/train_new.tsv -O $GLUE_DATA_FOLDER/STS-B/train.tsv
 # cat sts-test.tsv| awk -F'\t' {'printf("%d\t%s\t%s\t%s\t%s\tnone\tnone\t%s\t%s\t%s\n",NR-1,$1,$2,$3,$4,$6,$7,$5)'}
 cp $GLUE_DATA_FOLDER/MRPC/msr_paraphrase_test.txt $GLUE_DATA_FOLDER/MRPC/dev.tsv
-wget https://raw.githubusercontent.com/HMJiangGatech/HMJiangGatech.github.io/master/files/data/mrpc-train.tsv?token=AHBGLAUQDPPACQSDF7KT4Z25LUEV6 -O $GLUE_DATA_FOLDER/MRPC/train.tsv
+wget https://hmjianggatech.github.io/files/data/mrpc-train.tsv -O $GLUE_DATA_FOLDER/MRPC/train.tsv
 
 
 TASKS=$2 # QQP

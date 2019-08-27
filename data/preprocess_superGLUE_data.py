@@ -220,7 +220,7 @@ def main(arguments):
         preprocess('MultiRC', args, 2, process_func)
     if 'ReCoRD' in tasks:
         # TODO: need to save span
-        raise NotImplementedError("Too many noise")
+        # raise NotImplementedError("Too many noise")
         def process_func(example):
             context = example['passage']['text']
             qa_pairs = example['qas']
@@ -229,39 +229,45 @@ def main(arguments):
             for e in entities:
                 e['end'] += 1
                 e['text'] = context[e['start']: e['end']]
-                if e['text'].endswith('.') or e['text'].endswith('\'') or e['text'].endswith('!'):
-                    e['end'] -= 1
-                if e['text'].startswith('.'):
-                    e['start'] += 1
                 if e['text'] == 're found s':
                     e['start'] -= 30
                     e['end'] -= 32
-                if e['start'] == 764 and e['end'] == 771 and e['text'].startswith('derri'):
+                elif e['start'] == 764 and e['end'] == 771 and e['text'].startswith('derri'):
                     example['passage']['text'] = context.replace(e['text']+'re', 'derriere')
                     context = example['passage']['text']
                     e['end'] +=1
-                if e['text'] == 'yrian ':
+                elif e['text'] == 'yrian ':
                     e['start'] -= 1
                     e['end'] -= 1
-                if e['text'] == 'l-Assad ':
+                elif e['text'] == 'l-Assad ':
                     e['start'] -= 1
                     e['end'] -= 1
-                if context.startswith("Ronnie and Donnie Galyon may be th") and e['start']<600 and example['idx']==2360:
+                elif context.startswith("Ronnie and Donnie Galyon may be th") and e['start']<600 and example['idx']==2360:
                     e['start'] -= 3
                     e['end'] -= 3
-                if e['start'] == 590 and e['end'] == 605 and e['text'].startswith('Michael Garcia'):
+                elif e['start'] == 590 and e['end'] == 605 and e['text'].startswith('Michael Garcia'):
                     context=context[:e['end']-1] + '\''+ context[e['end']:]
                     example['passage']['text'] = context
                     e['end'] -= 1
-                if e['text'] == 'arth ':
+                elif e['text'] == 'arth ':
                     context=' '+ context
                     example['passage']['text'] = context
-                if e['text'] in ['\nOntari',' Eart']:
+                    qa_pairs[0]['answers'][0]['text']='Ontario'
+                    qa_pairs[0]['answers'][1]['text']='Ontario'
+                elif e['text'] in ['\nOntari',' Eart']:
                     e['start'] += 1
                     e['end'] += 1
-                if e['text'] in ['man so', 'tle of the Seelow Heights ha']:
+                elif e['text'] in ['man so', 'tle of the Seelow Heights ha', 'ociation for the Recovery of the Fallen - ', 'lin fr', ' Army in']:
                     e['start'] -= 3
                     e['end'] -= 3
+                    qa_pairs[0]['answers'][0]['text']='German'
+                    qa_pairs[0]['answers'][1]['text']='German'
+                    qa_pairs[1]['answers'][0]['text']='German'
+                    qa_pairs[2]['answers'][0]['text']='German'
+                if e['text'].endswith('.') or e['text'].endswith('\'') or e['text'].endswith('!') or e['text'].endswith('\\'):
+                    e['end'] -= 1
+                if e['text'].startswith('.'):
+                    e['start'] += 1
 
                 e['text'] = context[e['start']: e['end']]
                 # if e['text'] == 'he O':

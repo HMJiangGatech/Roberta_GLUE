@@ -218,9 +218,7 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
 
         padding_mask = sample['net_input']['src_tokens'].eq(criterion.padding_idx)
         if self.args.mean_teacher:
-            with torch.no_grad():
-                teacher_logits,_ = get_logit(teacher_model, sample, padding_mask)
-            teacher_logits = teacher_logits.detach()
+            teacher_logits,_ = get_teacher_logit(teacher_model, sample, padding_mask, headmodel = model)
 
         if args.use_vat:
             loss, sample_size, logging_output, logits, embed = criterion(model, sample, returnfull=True)
@@ -269,7 +267,8 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
                 _lambda = self.args.mean_teacher_lambda # 1, important
             else:
                 _lambda = self.args.mean_teacher_lambda * min(1,math.exp(-5*(1-self.global_trainstep/self.args.mean_teacher_rampup)**2))
-            mt_loss = teach_class(logits,teacher_logits,self.args.teacher_class,_lambda)
+            mt_loss = teach_class(logits,teacher_logits.detach(),self.args.teacher_class,_lambda)
+            mt_loss += teach_class(teacher_logits,logits.detach(),self.args.teacher_class,_lambda)
             logging_output.update(
                 mt_loss=mt_loss.item()
             )
@@ -283,6 +282,17 @@ def get_logit(model, sample, padding_mask):
     features = features.transpose(0, 1)
     logits = model.classification_heads['sentence_classification_head'](
         features,
+        padding_mask=padding_mask,
+    )
+    return logits, extra
+
+def get_teacher_logit(model, sample, padding_mask, headmodel):
+    with torch.no_grad():
+        features, extra = model(**sample['net_input'], features_only=True, return_all_hiddens=True)
+        features = features.transpose(0, 1)
+
+    logits = headmodel.classification_heads['sentence_classification_head'](
+        features.detach(),
         padding_mask=padding_mask,
     )
     return logits, extra

@@ -1,3 +1,4 @@
+#!/bin/bash
 mkdir checkpoints
 cd checkpoints
 wget https://dl.fbaipublicfiles.com/fairseq/models/roberta.large.tar.gz

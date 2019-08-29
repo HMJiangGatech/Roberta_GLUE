@@ -143,7 +143,7 @@ do
     do
       LANG="input$INPUT_TYPE"
       echo "BPE encoding $SPLIT/$LANG"
-      python -m examples.roberta.multiprocessing_bpe_encoder \
+      python multiprocessing_bpe_encoder.py \
       --encoder-json encoder.json \
       --vocab-bpe vocab.bpe \
       --inputs "$TASK_DATA_FOLDER/processed/$SPLIT.raw.$LANG" \
@@ -182,7 +182,7 @@ do
    fairseq-preprocess \
       --only-source \
       --trainpref "$TASK_DATA_FOLDER/processed/train.label" \
-      --validpref "${DEVPREF//LANG/'label'}" \
+      --validpref "${DEVPREF//LANG/label}" \
       --destdir "$TASK-bin/label" \
       --workers 60;
   else

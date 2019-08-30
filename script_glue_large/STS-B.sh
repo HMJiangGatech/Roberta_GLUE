@@ -9,16 +9,16 @@ fi
 echo "Run on GPU $GPUID"
 
 PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
-ROBERTA_LARGE_DIR=$PROJECT_ROOT/checkpoints/roberta.large.mnli/model.pt
+ROBERTA_Large_DIR=$PROJECT_ROOT/checkpoints/roberta.large.mnli/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
 SEED=0
 TASK=STS-B
-TAG=Baseline
+TAG=Baseline_Large
 
-TOTAL_NUM_UPDATES=3598  # 10 epochs through RTE for bsz 16
+TOTAL_NUM_UPDATES=4530  # 10 epochs through RTE for bsz 16
 EPOCH=10          # total epoches
-WARMUP_UPDATES=214      # 6 percent of the number of updates
+WARMUP_UPDATES=272      # 6 percent of the number of updates
 LR=2e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=1
 MAX_SENTENCES=16        # Batch size.
@@ -30,7 +30,7 @@ rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclud
 
 CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --save-dir $OUTPUT \
---restore-file $ROBERTA_LARGE_DIR \
+--restore-file $ROBERTA_Large_DIR \
 --max-positions 512 \
 --max-sentences $MAX_SENTENCES \
 --max-tokens 4400 \

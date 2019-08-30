@@ -17,5 +17,5 @@ CUDA_VISIBLE_DEVICES=$GPUID python eval_glue.py --task MRPC  --ckp checkpoints/M
 CUDA_VISIBLE_DEVICES=$GPUID python eval_glue.py --task CoLA  --ckp checkpoints/CoLA/10_1e-05_Baseline_Large_0_staged/checkpoint_best.pt
 CUDA_VISIBLE_DEVICES=$GPUID python eval_glue.py --task WSC   --ckp checkpoints/WSC/58_2e-05_Baseline_Large_0_staged/checkpoint_best.pt
 
-CUDA_VISIBLE_DEVICES=$GPUID python eval_glue.py --task MNLI  --ckp checkpoints/MNLI/10_1e-05_Baseline_Large_0_staged/checkpoint3.pt
-CUDA_VISIBLE_DEVICES=$GPUID python eval_glue.py --task AX    --ckp checkpoints/MNLI/10_1e-05_Baseline_Large_0_staged/checkpoint3.pt
+CUDA_VISIBLE_DEVICES=$GPUID python eval_glue.py --task MNLI  --ckp checkpoints/MNLI/10_1e-05_Baseline_Large_0_staged/checkpoint2.pt
+CUDA_VISIBLE_DEVICES=$GPUID python eval_glue.py --task AX    --ckp checkpoints/MNLI/10_1e-05_Baseline_Large_0_staged/checkpoint2.pt

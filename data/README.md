@@ -10,6 +10,7 @@ WSC for glue:
 ```bash
 # requirement
 pip install spacy
+pip install scaremoses
 python -m spacy download en_core_web_lg
 # download data
 ./download_WSC.sh

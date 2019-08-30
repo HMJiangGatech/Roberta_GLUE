@@ -21,7 +21,7 @@ TAG=Baseline_Base
 TOTAL_NUM_UPDATES=9427  # 10 epochs through BoolQ for bsz 16
 EPOCH=10          # total epoches
 WARMUP_UPDATES=566      # 6 percent of the number of updates
-LR=2e-05                # Peak LR for polynomial LR scheduler.
+LR=3e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=2
 MAX_SENTENCES=16        # Batch size.
 
@@ -43,7 +43,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --arch roberta_base \
 --criterion sentence_prediction_mtvat \
 --num-classes $NUM_CLASSES \
---dropout 0.1 --attention-dropout 0.1 \
+--dropout 0.1 --attention-dropout 0.2 \
 --weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \
 --clip-norm 0.0 \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \

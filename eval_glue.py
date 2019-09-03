@@ -5,13 +5,15 @@ import numpy as np
 import os,sys
 import csv
 from tqdm import tqdm
-
+import ipdb
+import math
+import torch
 
 from mymodule import *
 
 from fairseq.models.roberta import RobertaModel
 
-TASKS = ['CoLA','MNLI','MRPC','QNLI','QQP','RTE','SST-2','STS-B','WSC', "AX"]
+TASKS = ['CoLA','MNLI','MRPC','QNLI','QQP','RTE','SST-2','STS-B','WSC', "AX", 'MNLI_DEV']
 
 parser = argparse.ArgumentParser(description='Roberta GLUE Evaluation')
 parser.add_argument('--task', default='WSC', type=str, choices=TASKS, help='Task Names')
@@ -97,13 +99,58 @@ def wsc_eval(ckpdir, ckpname, savedir, datadir = None):
             pred = roberta.disambiguate_pronoun(sentence)
             tsv_writer.writerow([i, int(pred)])
 
+def mnli_dev(ckpdir, ckpname, datadir = None):
+    task = 'MNLI'
+    if datadir is None:
+        datadir = 'data/{}-bin/'.format(task)
+    roberta = RobertaModel.from_pretrained(ckpdir, ckpname, datadir)
+    roberta.cuda()
+    roberta.eval()
+    label_fn = lambda label: roberta.task.label_dictionary.string(
+                [label + roberta.task.target_dictionary.nspecial]
+            )
+    str2label = lambda str: roberta.task.label_dictionary.encode_line(str)[0].item() - roberta.task.target_dictionary.nspecial
+
+    tasks = [task]
+    testfiles = [os.path.join(datadir,'../glue_data/{}/test.tsv'.format(task))]
+    tasks = ["MNLI-m", "MNLI-mm"]
+    testfiles = [os.path.join(datadir,'../glue_data/MNLI/dev_matched.tsv'),
+                os.path.join(datadir,'../glue_data/MNLI/dev_mismatched.tsv')]
+
+
+    for task, testfile in zip(tasks, testfiles):
+        kl_loss = 0
+        accuracy = 0
+        print("Task: {}".format(task))
+        with open(testfile) as fin:
+            fin.readline()
+            pbar = tqdm(enumerate(fin))
+            for index, line in pbar:
+                tokens = line.strip().split('\t')
+                input_token = roberta.encode(tokens[8], tokens[9])
+                log_softmax_out = roberta.predict('sentence_classification_head', input_token)
+                prediction = log_softmax_out.argmax().item()
+
+                labels = np.array([ str2label(t.lower()) for t in tokens[10:15]])
+                labels = np.array([ sum(labels==l) for l in range(3) ])/5
+                assert sum(labels)==1
+                kl_loss -= sum( l1*l2 for l1,l2 in zip(labels, log_softmax_out.detach().cpu().numpy()[0]) )
+                accuracy += prediction == labels.argmax()
+                pbar.set_description("kl: {:.4f}, accu: {:.4f} ".format(kl_loss/(index+1), accuracy/(index+1)))
+
+
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
     print("=========== {} ===========".format(args.task))
     os.makedirs(args.savedir, exist_ok=True)
     ckpdir, ckpname = sep_dir(args.ckp)
-    if args.task.lower() == 'wsc':
-        wsc_eval(ckpdir, ckpname, args.savedir, args.datadir)
-    else:
-        sentence_predict(args.task, ckpdir, ckpname, args.savedir, args.datadir)
+    with torch.no_grad():
+        if args.task == 'MNLI_DEV':
+            mnli_dev(ckpdir, ckpname, args.datadir)
+        elif args.task.lower() == 'wsc':
+            wsc_eval(ckpdir, ckpname, args.savedir, args.datadir)
+        else:
+            sentence_predict(args.task, ckpdir, ckpname, args.savedir, args.datadir)
 

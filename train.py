@@ -52,6 +52,7 @@ def main(args, init_distributed=False):
     # Initialize CUDA and distributed training
     if torch.cuda.is_available() and not args.cpu:
         torch.cuda.set_device(args.device_id)
+    np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if init_distributed:
         args.distributed_rank = distributed_utils.distributed_init(args)
@@ -70,7 +71,18 @@ def main(args, init_distributed=False):
         task.load_dataset(valid_sub_split, combine=False, epoch=0)
 
     # Build model and criterion
+    # if args.arch == "v2":
+
+    #     from mymodels import roberta_models
+    #     model = roberta_models.build_model(args)
+    #     model.register_classification_head(
+    #         'sentence_classification_head',
+    #         num_classes=self.args.num_classes,
+    #     )
+
+    # else:
     model = task.build_model(args)
+
     criterion = task.build_criterion(args)
     print(model)
     print('| model {}, criterion {}'.format(args.arch, criterion.__class__.__name__))

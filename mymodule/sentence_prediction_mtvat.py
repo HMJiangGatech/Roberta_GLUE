@@ -262,7 +262,7 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
             )
             loss = loss+vat_loss
         else:
-            loss, sample_size, logging_output = criterion(model, sample)
+            loss, sample_size, logging_output, logits, embed = criterion(model, sample, returnfull=True)
 
         if self.args.mean_teacher and self.args.teacher_class is not None:
             if self.args.teacher_class == 'smart':

@@ -281,8 +281,39 @@ def roberta_v2_base_archiecture(args):
     args.decoder_ffn_embed_dim = getattr(args, 'decoder_ffn_embed_dim', 3072)
     args.decoder_attention_heads = getattr(args, 'decoder_attention_heads', 12)
 
-@register_model_architecture('roberta_v2', 'roberta_v2_base')
-def roberta_v2_base(args):
+@register_model_architecture('roberta_v2', 'roberta_v2_base_1')
+def roberta_v2_base_1(args):
+    args.decoder_layers = getattr(args, 'decoder_layers', 1)
+    roberta_v2_base_archiecture(args)
+
+@register_model_architecture('roberta_v2', 'roberta_v2_base_2')
+def roberta_v2_base_2(args):
+    args.decoder_layers = getattr(args, 'decoder_layers', 2)
+    roberta_v2_base_archiecture(args)
+
+@register_model_architecture('roberta_v2', 'roberta_v2_base_4')
+def roberta_v2_base_4(args):
+    args.decoder_layers = getattr(args, 'decoder_layers', 4)
+    roberta_v2_base_archiecture(args)
+
+@register_model_architecture('roberta_v2', 'roberta_v2_base_6')
+def roberta_v2_base_6(args):
+    args.decoder_layers = getattr(args, 'decoder_layers', 6)
+    roberta_v2_base_archiecture(args)
+
+@register_model_architecture('roberta_v2', 'roberta_v2_base_8')
+def roberta_v2_base_8(args):
+    args.decoder_layers = getattr(args, 'decoder_layers', 8)
+    roberta_v2_base_archiecture(args)
+
+@register_model_architecture('roberta_v2', 'roberta_v2_base_10')
+def roberta_v2_base_10(args):
+    args.decoder_layers = getattr(args, 'decoder_layers', 10)
+    roberta_v2_base_archiecture(args)
+
+@register_model_architecture('roberta_v2', 'roberta_v2_base_12')
+def roberta_v2_base_12(args):
+    args.decoder_layers = getattr(args, 'decoder_layers', 12)
     roberta_v2_base_archiecture(args)
 
 @register_model_architecture('roberta_v2', 'roberta_v2_large')

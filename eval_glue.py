@@ -88,7 +88,7 @@ def wsc_eval(ckpdir, ckpname, savedir, datadir = None):
     with open(os.path.join(savedir,'WNLI.tsv'), 'wt') as out_file:
         tsv_writer = csv.writer(out_file, delimiter='\t')
         tsv_writer.writerow(['index', 'prediction'])
-        for sentence, _ in tqdm(wsc_utils.jsonl_iterator(os.path.join(datadir,'test_glue.jsonl'), eval=True)):
+        for sentence, _ in tqdm(wsc_utils.jsonl_iterator(os.path.join(datadir,'test_glue.jsonl'), eval=True, skipid=[84,85,86,87])):
             i = i+1
             if i==84:
                 tsv_writer.writerow([i, 1])

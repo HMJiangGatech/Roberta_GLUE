@@ -87,12 +87,15 @@ def get_spacy_nlp():
     return nlp
 
 
-def jsonl_iterator(input_fname, positive_only=False, ngram_order=3, eval=False):
+def jsonl_iterator(input_fname, positive_only=False, ngram_order=3, eval=False, skipid = []):
     detok = get_detokenizer()
     nlp = get_spacy_nlp()
 
     with open(input_fname) as fin:
-        for line in fin:
+        for line_id, line in enumerate(fin):
+            if line_id in skipid:
+                yield None, None
+                continue
             sample = json.loads(line.strip())
 
             if positive_only and 'label' in sample and not sample['label']:

@@ -119,7 +119,9 @@ def mnli_dev(ckpdir, ckpname, datadir = None):
 
 
     for task, testfile in zip(tasks, testfiles):
-        kl_loss = 0
+        tv_loss = 0
+        tv_low  = 0
+        tv_high = 0
         accuracy = 0
         print("Task: {}".format(task))
         with open(testfile) as fin:
@@ -134,9 +136,11 @@ def mnli_dev(ckpdir, ckpname, datadir = None):
                 labels = np.array([ str2label(t.lower()) for t in tokens[10:15]])
                 labels = np.array([ sum(labels==l) for l in range(3) ])/5
                 assert sum(labels)==1
-                kl_loss -= sum( l1*l2 for l1,l2 in zip(labels, log_softmax_out.detach().cpu().numpy()[0]) )
+                tv_loss += sum( abs(l1-math.exp(l2)) for l1,l2 in zip(labels, log_softmax_out.detach().cpu().numpy()[0]) )
+                tv_high += 2-max(labels)
+                tv_low += sum(abs(labels-1/3))
                 accuracy += prediction == labels.argmax()
-                pbar.set_description("kl: {:.4f}, accu: {:.4f} ".format(kl_loss/(index+1), accuracy/(index+1)))
+                pbar.set_description("tv: {:.4f}/ {:.4f}-{:.4f}, accu: {:.4f} ".format(tv_loss/(index+1), tv_low/(index+1), tv_high/(index+1), accuracy/(index+1)))
 
 
 

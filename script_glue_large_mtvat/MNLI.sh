@@ -12,9 +12,9 @@ PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
 ROBERTA_large_DIR=$PROJECT_ROOT/checkpoints/roberta.large/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
-SEED=9
+SEED=0
 TASK=MNLI
-TAG=MTVAT_large
+TAG=MTVAT_large_dropout03_beta2_0999
 
 TOTAL_NUM_UPDATES=24552
 EPOCH=4          # total epoches
@@ -28,8 +28,8 @@ MEAN_TEACHER=False
 MEAN_TEACHER_AVG=simple
 MT_ALPHA1=0.99
 MT_ALPHA2=0.999
-MT_RAMPUP=32000
-MT_UPDATE=32000
+MT_RAMPUP=16000
+MT_UPDATE=16000
 
 MT_LAMBDA=1
 VAT_LAMBDA=10
@@ -37,7 +37,7 @@ VAT_LAMBDA=10
 USE_VAT=True
 USE_NOISECP=False
 USE_ADVCP=False
-VAT_EPS=1e-4
+VAT_EPS=1e-3
 ADVCP_EPS=1e-6
 TEACHER_CLASS=kl
 
@@ -47,6 +47,7 @@ cp -f $(readlink -f "$0") $OUTPUT/script
 rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclude 'data' $PROJECT_ROOT/ $OUTPUT/src
 
 CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
+--pooler-dropout 0.3 \
 --mean_teacher_lambda $MT_LAMBDA \
 --vat_lambda $VAT_LAMBDA \
 --vat_eps $VAT_EPS \
@@ -74,7 +75,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --criterion sentence_prediction_mtvat \
 --num-classes $NUM_CLASSES \
 --dropout 0.1 --attention-dropout 0.1 \
---weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps $ADAM_EPS \
+--weight-decay 0.01 --optimizer adam --adam-betas "(0.9, 0.999)" --adam-eps $ADAM_EPS \
 --clip-norm 0.0 \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \
 --fp16 --fp16-init-scale 4 --threshold-loss-scale 1 --fp16-scale-window 128 \

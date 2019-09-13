@@ -1,0 +1,8 @@
+| epoch 001 | valid on 'valid' subset | loss 0.385 | nll_loss 0.010 | ppl 1.01 | num_updates 6109 | accuracy 0.900672
+| epoch 001 | valid on 'valid1' subset | loss 0.383 | nll_loss 0.009 | ppl 1.01 | num_updates 6109 | accuracy 0.901851
+| epoch 002 | valid on 'valid' subset | loss 0.368 | nll_loss 0.009 | ppl 1.01 | num_updates 12210 | best_accuracy 0.90709 | accuracy 0.90709
+| epoch 002 | valid on 'valid1' subset | loss 0.374 | nll_loss 0.009 | ppl 1.01 | num_updates 12210 | best_accuracy 0.907242 | accuracy 0.907242
+| epoch 003 | valid on 'valid' subset | loss 0.366 | nll_loss 0.009 | ppl 1.01 | num_updates 18311 | best_accuracy 0.909535 | accuracy 0.909535
+| epoch 003 | valid on 'valid1' subset | loss 0.377 | nll_loss 0.009 | ppl 1.01 | num_updates 18311 | best_accuracy 0.909174 | accuracy 0.909174
+| epoch 004 | valid on 'valid' subset | loss 0.386 | nll_loss 0.010 | ppl 1.01 | num_updates 24411 | best_accuracy 0.910554 | accuracy 0.910554
+| epoch 004 | valid on 'valid1' subset | loss 0.400 | nll_loss 0.010 | ppl 1.01 | num_updates 24411 | best_accuracy 0.909535 | accuracy 0.907445

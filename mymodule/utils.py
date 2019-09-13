@@ -119,6 +119,6 @@ def update_meanteacher(teacher_param, student_param, average="exponential", alph
         if average == "exponential":
             param_tea.data.add_( (1-alpha)*(param_new-param_tea.data) )
         elif average == "simple":
-            virtual_decay = 1 / float(step + 1)
+            virtual_decay = 1 / float(step)
             diff = (param_new - param_tea.data) * virtual_decay
             param_tea.data.add_(diff)

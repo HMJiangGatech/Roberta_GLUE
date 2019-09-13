@@ -71,6 +71,10 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
             default=True,
             type=boolean_string,
             help="False (default), use mean teacher.")
+        parser.add_argument('--mean_teacher_updatefreq',
+            default=1,
+            type=int,
+            help="Update Frequency")
         parser.add_argument('--mean_teacher_avg',
             default="exponential",
             type=none_string,
@@ -199,8 +203,8 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
 
         if self.global_trainstep == 0:
             if self.args.mean_teacher:
-                self.teacher_model = copy.deepcopy(model)
-                self.teacher_model.train()
+                self.teacher_model = model #copy.deepcopy(model)
+                #self.teacher_model.train()
             if self.args.use_noisycopy or self.args.use_advcopy:
                 self.noisycopy_model = create_noisycopy_model(model,args)
                 self.noisycopy_model.train()
@@ -209,15 +213,20 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
         teacher_model = self.teacher_model
         noisycopy_model = self.noisycopy_model
 
-        if args.mean_teacher:
-            if self.global_trainstep < args.mean_teacher_rampup:
-                _alpha = args.mean_teacher_alpha1
-            else:
-                _alpha = args.mean_teacher_alpha2
-            update_meanteacher(teacher_model.named_parameters(), model.named_parameters(), average=args.mean_teacher_avg, alpha=_alpha, step=self.global_trainstep)
+        if args.mean_teacher and self.global_trainstep%args.mean_teacher_updatefreq==0:
+            update_step = self.global_trainstep // args.mean_teacher_updatefreq
+            if update_step == 1:
+                self.teacher_model = copy.deepcopy(model)
+                self.teacher_model.train()
+            if update_step > 1:
+                if update_step < args.mean_teacher_rampup:
+                    _alpha = args.mean_teacher_alpha1
+                else:
+                    _alpha = args.mean_teacher_alpha2
+                update_meanteacher(teacher_model.named_parameters(), model.named_parameters(), average=args.mean_teacher_avg, alpha=_alpha, step=update_step)
 
         padding_mask = sample['net_input']['src_tokens'].eq(criterion.padding_idx)
-        if self.args.mean_teacher:
+        if self.args.mean_teacher and self.global_trainstep // args.mean_teacher_updatefreq>0 :
             with torch.no_grad():
                 teacher_logits,_ = get_logit(teacher_model, sample, padding_mask)
             teacher_logits = teacher_logits.detach()
@@ -229,21 +238,20 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
             newembed.requires_grad_()
             logits_vat = embed_forward(model, newembed, padding_mask)
             vat_loss = teach_class(logits_vat,logits.detach(),args.teacher_class,1)
-            optimizer.backward(vat_loss)
+            newembed.grad = opt_grad(vat_loss, newembed, optimizer)[0]
             norm = newembed.grad.norm()
             if (torch.isnan(norm) or torch.isinf(norm)):
                 print("Hit nan gradient in embed vat")
-                model.zero_grad()
                 optimizer.backward(loss)
                 return loss, sample_size, logging_output
             adv_direct = newembed.grad/(  newembed.grad.abs().max(-1,keepdim=True)[0]  +1e-4)
             newembed = newembed+adv_direct*self.args.vat_eps
             newembed = newembed.detach()
             if self.args.use_advcopy:
+                raise NotImplementedError('it is not implemented')
                 _model,is_nan = update_advcopy_model(copy.deepcopy(self.noisycopy_model),model)
                 if is_nan:
                     print("Hit nan gradient in advcopy")
-                    model.zero_grad()
                     optimizer.backward(loss)
                     return loss, sample_size, logging_output
                 logits_vat = embed_forward(_model, newembed, padding_mask)
@@ -252,7 +260,6 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
                 logits_vat = embed_forward(_model, newembed, padding_mask)
             else:
                 logits_vat = embed_forward(model, newembed, padding_mask)
-            model.zero_grad()
             # cross_entropy | double way
             vat_loss = teach_class(logits_vat,logits.detach(),self.args.teacher_class,args.vat_lambda)
             vat_loss += teach_class(logits,logits_vat.detach(),self.args.teacher_class,args.vat_lambda)
@@ -264,11 +271,11 @@ class SentencePredictionMTVATTask(SentencePredictionTask):
         else:
             loss, sample_size, logging_output, logits, embed = criterion(model, sample, returnfull=True)
 
-        if self.args.mean_teacher and self.args.teacher_class is not None:
+        if self.args.mean_teacher and self.args.teacher_class is not None and self.global_trainstep // args.mean_teacher_updatefreq > 0:
             if self.args.teacher_class == 'smart':
                 _lambda = self.args.mean_teacher_lambda # 1, important
             else:
-                _lambda = self.args.mean_teacher_lambda * min(1,math.exp(-5*(1-self.global_trainstep/self.args.mean_teacher_rampup)**2))
+                _lambda = self.args.mean_teacher_lambda * min(1,math.exp(-5*(1-(self.global_trainstep//args.mean_teacher_updatefreq)/self.args.mean_teacher_rampup)**2))
             mt_loss = teach_class(logits,teacher_logits,self.args.teacher_class,_lambda)
             logging_output.update(
                 mt_loss=mt_loss.item()
@@ -307,3 +314,8 @@ def embed_forward(model, embed, padding_mask):
     )
 
     return logits
+
+def opt_grad(loss, in_var,  optimizer):
+    if hasattr(optimizer, 'scalar'):
+        loss = loss * optimizer.scaler.loss_scale
+    return torch.autograd.grad(loss, in_var)

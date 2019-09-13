@@ -12,7 +12,7 @@ PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
 ROBERTA_large_DIR=$PROJECT_ROOT/checkpoints/roberta.large/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
-SEED=9
+SEED=0
 TASK=MNLI
 TAG=MTVAT_large
 
@@ -25,11 +25,10 @@ NUM_CLASSES=3
 MAX_SENTENCES=8        # Batch size.
 
 MEAN_TEACHER=False
-MEAN_TEACHER_AVG=simple
+MEAN_TEACHER_AVG=exponential
 MT_ALPHA1=0.99
 MT_ALPHA2=0.999
-MT_RAMPUP=32000
-MT_UPDATE=32000
+MT_RAMPUP=8000
 
 MT_LAMBDA=1
 VAT_LAMBDA=10
@@ -55,7 +54,6 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --mean_teacher_alpha1 $MT_ALPHA1 \
 --mean_teacher_alpha2 $MT_ALPHA2 \
 --mean_teacher_rampup $MT_RAMPUP \
---mean_teacher_updatefreq $MT_UPDATE \
 --teacher_class $TEACHER_CLASS \
 --use_vat $USE_VAT \
 --use_noisycopy $USE_NOISECP \

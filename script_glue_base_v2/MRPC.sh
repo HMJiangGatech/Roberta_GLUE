@@ -42,7 +42,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --arch $ARCH \
 --criterion sentence_prediction_mtvat \
 --num-classes $NUM_CLASSES \
---dropout 0.1 --attention-dropout 0.1 \
+--dropout 0.1 --attention-dropout 0.1 --pooler-dropout 0.3 \
 --weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \
 --clip-norm 0.0 \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \

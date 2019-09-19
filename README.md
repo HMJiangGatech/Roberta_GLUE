@@ -45,6 +45,9 @@ Model | BoolQ | CB | RTE
 ---|---|---|---
 `roberta.mnli.base` | 82.2 | 96.8 | 85.8 
 
+## Reported Statistics
+
+![Report Statistics](plots/RoBERTa_v2_Experiments.png)
 
 
 ## MTVAT

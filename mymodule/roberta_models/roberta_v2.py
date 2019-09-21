@@ -23,8 +23,8 @@ from fairseq.models.roberta import (
     RobertaClassificationHead,
 )
 
-from fairseq.modules import (
-    TransformerSentenceEncoderLayer,
+from ..roberta_modules import (
+    TransformerSentenceEncoderLayer_v2,
 )
 
 from fairseq.modules.transformer_sentence_encoder import init_bert_params
@@ -70,6 +70,8 @@ class RobertaModel_v2(FairseqLanguageModel):
                             help='activation function to use for pooler layer')
         parser.add_argument('--encoder-normalize-before', action='store_true',
                             help='apply layernorm before each encoder block')
+        parser.add_argument('--decoder-attn-stable-init-ratio', type=float, 
+                            help='the ratio of attn heads to copy from previous layer of attn heads.')
         parser.add_argument('--dropout', type=float, metavar='D',
                             help='dropout probability')
         parser.add_argument('--attention-dropout', type=float, metavar='D',
@@ -207,16 +209,18 @@ class RobertaModel_v2(FairseqLanguageModel):
                     state_dict[prefix + 'classification_heads.' + k] = v
 
 class RobertaDecoder(nn.Module):
-    """Roberta v2 decder."""
+    """
+    Implementation of Roberta v2 decoder.
+    """
 
     def __init__(self, args, add_bias_kv = False, add_zero_attn = False, export = False):
 
         super().__init__()
-        
+
         self.layers = nn.ModuleList(
             
             [
-                TransformerSentenceEncoderLayer(
+                TransformerSentenceEncoderLayer_v2(
                     embedding_dim=args.decoder_embed_dim,
                     ffn_embedding_dim=args.decoder_ffn_embed_dim,
                     num_attention_heads=args.decoder_attention_heads,
@@ -226,6 +230,7 @@ class RobertaDecoder(nn.Module):
                     activation_fn=args.activation_fn,
                     add_bias_kv=add_bias_kv,
                     add_zero_attn=add_zero_attn,
+                    stable_init_ratio=args.decoder_attn_stable_init_ratio,
                     export=export,
                 )
 
@@ -246,8 +251,9 @@ class RobertaDecoder(nn.Module):
         if not last_state_only:
             inner_states.append(x)
 
+        prev_weight = None
         for layer in self.layers:
-            x, _ = layer(x)
+            x, attn, prev_weight = layer(x = x, prev_weight = prev_weight)
             if not last_state_only:
                 inner_states.append(x)
 
@@ -280,6 +286,8 @@ def roberta_v2_base_archiecture(args):
     args.decoder_embed_dim = getattr(args, 'decoder_embed_dim', 768)
     args.decoder_ffn_embed_dim = getattr(args, 'decoder_ffn_embed_dim', 3072)
     args.decoder_attention_heads = getattr(args, 'decoder_attention_heads', 12)
+
+    args.decoder_attn_stable_init_ratio = getattr(args, 'decoder_attn_stable_init_ratio', 0.0)
 
 @register_model_architecture('roberta_v2', 'roberta_v2_base_1')
 def roberta_v2_base_1(args):

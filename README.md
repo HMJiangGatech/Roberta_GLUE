@@ -56,7 +56,7 @@ Model | BoolQ | CB | RTE
 
 ## Reported Statistics
 
-(RoBerta v2 model statistics)[https://gtvault-my.sharepoint.com/:x:/g/personal/cliang73_gatech_edu/EUIZOT4TuzBBhvWVaQvLiLsB1s9jMTmeQfzLpXPZCu9PzQ?e=pbm4PT]
+[RoBerta v2 model statistics](https://gtvault-my.sharepoint.com/:x:/g/personal/cliang73_gatech_edu/EUIZOT4TuzBBhvWVaQvLiLsB1s9jMTmeQfzLpXPZCu9PzQ?e=pbm4PT)
 
 ![Report Statistics](plots/RoBERTa_v2_Experiments.png)
 

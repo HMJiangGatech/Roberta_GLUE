@@ -20,6 +20,15 @@
 | forget_v2 dev |           |      |           |      |      | 89.4,83.3 |      |           |      |
 | mtvat     dev | 88.1,87.6 | 92.9 | 91.9,89.2 | 80.6 | 96.2 | 87.8,81.9 | 60.3 | 89.8,89.3 |      |
 
+| V2 Model Variation        | MNLI      | QNLI | QQP       | RTE  | SST-2| MRPC      | CoLA | STS-B     | WSC  |
+|---|---|---|---|---|---|---|---|---|---|
+| base                                     dev |           |      |           |      |      | 89.7,83.3 |      |           |      |
+| forget                                   dev |           |      |           |      |      | 89.4,83.3 |      |           |      |
+| base w/pooler_dropout=0.3                dev |           |      |           |      |      | 90.6,85.6 |      |           |      |
+| forget w/pooler_dropout=0.3              dev |           |      |           |      |      | 90.4,85.4 |      |           |      |
+| base w/stable_init,pooler_dropout=0.1    dev |           |      |           |      |      | 90.4,84.4 |      |           |      |
+| forget w/stable_init,pooler_dropout=0.2  dev |           |      |           |      |      |  |      |           |      |
+
 
 ## Large
 
@@ -46,6 +55,8 @@ Model | BoolQ | CB | RTE
 `roberta.mnli.base` | 82.2 | 96.8 | 85.8 
 
 ## Reported Statistics
+
+(RoBerta v2 model statistics)[https://gtvault-my.sharepoint.com/:x:/g/personal/cliang73_gatech_edu/EUIZOT4TuzBBhvWVaQvLiLsB1s9jMTmeQfzLpXPZCu9PzQ?e=pbm4PT]
 
 ![Report Statistics](plots/RoBERTa_v2_Experiments.png)
 

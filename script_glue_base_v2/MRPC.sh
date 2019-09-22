@@ -16,6 +16,7 @@ SEED=0
 TASK=MRPC
 TAG=Baseline_Base
 ARCH=roberta_v2_base_2
+RATIO=0.0
 
 TOTAL_NUM_UPDATES=2296  # 10 epochs through RTE for bsz 16
 EPOCH=10          # total epoches
@@ -24,7 +25,7 @@ LR=1e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=2
 MAX_SENTENCES=16        # Batch size.
 
-OUTPUT=$PROJECT_ROOT/checkpoints/${TASK}_${ARCH}/${EPOCH}_${LR}_${TAG}_${SEED}
+OUTPUT=$PROJECT_ROOT/checkpoints/${TASK}_${ARCH}/${EPOCH}_${LR}_${TAG}_${SEED}_${RATIO}
 [ -e $OUTPUT/script  ] || mkdir -p $OUTPUT/script
 cp -f $(readlink -f "$0") $OUTPUT/script
 rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclude 'data' $PROJECT_ROOT/ $OUTPUT/src
@@ -43,7 +44,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --criterion sentence_prediction_mtvat \
 --num-classes $NUM_CLASSES \
 --dropout 0.1 --attention-dropout 0.1 --pooler-dropout 0.3 \
---decoder-attn-stable-init-ratio 0.7 \
+--decoder-attn-stable-init-ratio $RATIO \
 --weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \
 --clip-norm 0.0 \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \

@@ -26,7 +26,7 @@
 | forget                                   dev |           |      |           |      |      | 89.4,83.3 |      |           |      |
 | base w/pooler_dropout=0.3                dev |           |      |           |      |      | 90.6,85.6 |      |           |      |
 | forget w/pooler_dropout=0.3              dev |           |      |           |      |      | 90.4,85.4 |      |           |      |
-| base w/stable_init,pooler_dropout=0.1    dev |           |      |           |      |      | 90.4,84.4 |      |           |      |
+| base w/stable_init,pooler_dropout=0.2    dev |           |      |           |      |      | 90.4,84.4 |      |           |      |
 | forget w/stable_init,pooler_dropout=0.2  dev |           |      |           |      |      |  |      |           |      |
 
 

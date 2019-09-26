@@ -79,7 +79,7 @@ class MultiheadAttention_v2(nn.Module):
     def prepare_for_onnx_export_(self):
         self.onnx_trace = True
 
-    def reset_parameters(self, prev_weight=None):
+    def reset_parameters(self, prev_weight=None, copied_heads=None):
             
         if self.qkv_same_dim:
             nn.init.xavier_uniform_(self.in_proj_weight)
@@ -99,9 +99,6 @@ class MultiheadAttention_v2(nn.Module):
             nn.init.xavier_normal_(self.bias_v)
 
         if self.num_copied_heads > 0 and prev_weight is not None:
-
-            copied_idx = np.random.choice(self.num_heads, self.num_copied_heads, replace = False)
-            copied_heads = np.reshape(np.array([list(range(s, e)) for (s, e) in zip(copied_idx * self.head_dim, (copied_idx + 1) * self.head_dim)]), -1)
 
             if self.qkv_same_dim:
                 self.q_mask[copied_heads, :] = 0
@@ -131,7 +128,11 @@ class MultiheadAttention_v2(nn.Module):
         assert embed_dim == self.embed_dim
         assert list(query.size()) == [tgt_len, bsz, embed_dim]
 
-        self.reset_parameters(prev_weight)
+        copied_heads = None
+        if self.num_copied_heads > 0 and prev_weight is not None:
+            copied_idx = np.random.choice(self.num_heads, self.num_copied_heads, replace = False)
+            copied_heads = np.reshape(np.array([list(range(s, e)) for (s, e) in zip(copied_idx * self.head_dim, (copied_idx + 1) * self.head_dim)]), -1)
+        self.reset_parameters(prev_weight, copied_heads)
 
         if self.enable_torch_version and not self.onnx_trace and incremental_state is None and not static_kv:
             if self.qkv_same_dim:
@@ -164,10 +165,10 @@ class MultiheadAttention_v2(nn.Module):
                 if static_kv:
                     assert self.encoder_decoder_attention and not self.self_attention
                     key = value = None
-        else:
+        else: 
             saved_state = None
 
-        if self.self_attention:
+        if self.self_attention: 
             # self-attention
             q, k, v = self.in_proj_qkv(query)
         elif self.encoder_decoder_attention:
@@ -179,7 +180,6 @@ class MultiheadAttention_v2(nn.Module):
             else:
                 k = self.in_proj_k(key)
                 v = self.in_proj_v(key)
-
         else:
             q = self.in_proj_q(query)
             k = self.in_proj_k(key)
@@ -196,12 +196,13 @@ class MultiheadAttention_v2(nn.Module):
                 key_padding_mask = torch.cat(
                     [key_padding_mask, key_padding_mask.new_zeros(key_padding_mask.size(0), 1)], dim=1)
 
-        q = q.contiguous().view(tgt_len, bsz * self.num_heads, self.head_dim).transpose(0, 1)
+
+        q = q.contiguous().view(-1, bsz * self.num_heads, self.head_dim).transpose(0, 1)
         if k is not None:
             k = k.contiguous().view(-1, bsz * self.num_heads, self.head_dim).transpose(0, 1)
         if v is not None:
             v = v.contiguous().view(-1, bsz * self.num_heads, self.head_dim).transpose(0, 1)
-
+        
         if saved_state is not None:
             # saved states are stored with shape (bsz, num_heads, seq_len, head_dim)
             if 'prev_key' in saved_state:
@@ -222,6 +223,8 @@ class MultiheadAttention_v2(nn.Module):
             self._set_input_buffer(incremental_state, saved_state)
 
         src_len = k.size(1)
+        # q: [bz * num_heads, tgt_len, head_dim]
+        # k, v: [bz * num_heads, src_len, head_dim]
 
         # This is part of a workaround to get around fork/join parallelism
         # not supporting Optional types.
@@ -242,7 +245,8 @@ class MultiheadAttention_v2(nn.Module):
                 key_padding_mask = torch.cat(
                     [key_padding_mask, torch.zeros(key_padding_mask.size(0), 1).type_as(key_padding_mask)], dim=1)
 
-        attn_weights = torch.bmm(q, k.transpose(1, 2))
+
+        attn_weights = torch.bmm(q, k.transpose(1, 2)) 
         attn_weights = self.apply_sparse_mask(attn_weights, tgt_len, src_len, bsz)
 
         assert list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len]
@@ -272,10 +276,17 @@ class MultiheadAttention_v2(nn.Module):
         attn_weights = utils.softmax(
             attn_weights, dim=-1, onnx_trace=self.onnx_trace,
         ).type_as(attn_weights)
-        attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.training)
 
+
+        if self.num_copied_heads > 0 and prev_weight is not None:
+            attn_weights = attn_weights.view(bsz, self.num_heads, tgt_len, src_len)
+            attn_weights[:, copied_idx, :, :] = prev_weight["nonavg"][:, copied_idx, :, :]
+            attn_weights = attn_weights.view(bsz * self.num_heads, tgt_len, src_len)
+        
+        attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.training)
         attn = torch.bmm(attn_weights, v)
         assert list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim]
+        
         if (self.onnx_trace and attn.size(1) == 1):
             # when ONNX tracing a single decoder step (sequence length == 1)
             # the transpose is a no-op copy before view, thus unnecessary
@@ -284,21 +295,24 @@ class MultiheadAttention_v2(nn.Module):
             attn = attn.transpose(0, 1).contiguous().view(tgt_len, bsz, embed_dim)
         attn = self.out_proj(attn)
 
+        attention_weights = {}
         if need_weights:
-            # average attention weights over heads
+
             attn_weights = attn_weights.view(bsz, self.num_heads, tgt_len, src_len)
-            attn_weights = attn_weights.sum(dim=1) / self.num_heads
-        else:
-            attn_weights = None
 
-        proj_weights = {}
-        if self.qkv_same_dim:
-            proj_weights["in"] = self.in_proj_weight
-        else:
-            proj_weights["k"], proj_weights["q"], proj_weights["v"] = self.k_proj_weight, self.q_proj_weight, self.v_proj_weight
-        proj_weights["out"] = self.out_proj.weight
+            # average attention weights over heads
+            attention_weights["avg"] = attn_weights.sum(dim=1) / self.num_heads # [bz, tgt_len, src_len]
+            # un-averaged attention weight
+            attention_weights["nonavg"] = attn_weights # [bz, num_heads, tgt_len, src_len]
 
-        return attn, attn_weights, proj_weights
+            # projection weight
+            if self.qkv_same_dim:
+                attention_weights["in"] = self.in_proj_weight
+            else:
+                attention_weights["k"], attention_weights["q"], attention_weights["v"] = self.k_proj_weight, self.q_proj_weight, self.v_proj_weight
+            attention_weights["out"] = self.out_proj.weight
+
+        return attn, attention_weights
 
     def in_proj_qkv(self, query):
         return self._in_proj(query).chunk(3, dim=-1)

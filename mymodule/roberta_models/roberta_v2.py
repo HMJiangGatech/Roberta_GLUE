@@ -251,9 +251,9 @@ class RobertaDecoder(nn.Module):
         if not last_state_only:
             inner_states.append(x)
 
-        prev_weight = None
+        attn = None
         for layer in self.layers:
-            x, attn, prev_weight = layer(x = x, prev_weight = prev_weight)
+            x, attn = layer(x = x, prev_weight = attn)
             if not last_state_only:
                 inner_states.append(x)
 

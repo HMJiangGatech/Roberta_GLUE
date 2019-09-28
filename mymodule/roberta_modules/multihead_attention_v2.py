@@ -52,13 +52,12 @@ class MultiheadAttention_v2(nn.Module):
 
         if bias:
             self.in_proj_bias = Parameter(torch.Tensor(3 * embed_dim))
-            self.bias_mask = torch.ones(embed_dim)
         else:
             self.register_parameter('in_proj_bias', None)
 
         self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         self.out_proj_mask = torch.ones(embed_dim, embed_dim, dtype = torch.half, device=torch.device('cuda:0'))
-
+        
         if add_bias_kv:
             self.bias_k = Parameter(torch.Tensor(1, 1, embed_dim))
             self.bias_v = Parameter(torch.Tensor(1, 1, embed_dim))
@@ -67,7 +66,6 @@ class MultiheadAttention_v2(nn.Module):
 
         self.add_zero_attn = add_zero_attn
         self.num_copied_heads = int(self.num_heads * stable_init_ratio)
-
         self.onnx_trace = False
 
         self.enable_torch_version = False
@@ -98,21 +96,32 @@ class MultiheadAttention_v2(nn.Module):
         if self.bias_v is not None:
             nn.init.xavier_normal_(self.bias_v)
 
-        if self.num_copied_heads > 0 and prev_weight is not None:
+        # if self.num_copied_heads > 0 and prev_weight is not None:
 
-            if self.qkv_same_dim:
-                self.q_mask[copied_heads, :] = 0
-                mask = self.q_mask.repeat(3, 1)
-                self.in_proj_weight = Parameter(self.in_proj_weight * mask + prev_weight["in"] * (1 - mask))
-            else:
-                self.k_mask[copied_heads, :], self.v_mask[copied_heads, :] = 0, 0
-                self.k_proj_weight = Parameter(self.k_proj_weight * self.k_mask + prev_weight["k"]* (1 - self.k_mask))
-                self.v_proj_weight = Parameter(self.v_proj_weight * self.v_mask + prev_weight["v"] * (1 - self.v_mask))
-                self.q_proj_weight = Parameter(self.q_proj_weight * self.q_mask + prev_weight["q"] * (1 - self.q_mask))
+            # if self.qkv_same_dim:
+            #     same_dim_heads = np.concatenate((copied_heads, copied_heads + self.embed_dim, \
+            #         copied_heads + 2 * self.embed_dim), axis=None)
 
-            self.out_proj_mask[copied_heads, :] = 0
-            self.out_proj.weight = Parameter(self.out_proj.weight * self.out_proj_mask + prev_weight["out"] * (1 - self.out_proj_mask))
+            #     self.in_proj_weight[same_dim_heads, :].data = prev_weight["in"][same_dim_heads, :].data
+            # else:
+            #     self.k_proj_weight[copied_heads, :].data = prev_weight["k"][copied_heads, :].data
+            #     self.v_proj_weight[copied_heads, :].data = prev_weight["v"][copied_heads, :].data
+            #     self.q_proj_weight[copied_heads, :].data = prev_weight["q"][copied_heads, :].data
 
+            # self.out_proj.weight[copied_heads, :].data = prev_weight["out"][copied_heads, :].data
+
+            # if self.qkv_same_dim:
+            #     self.q_mask[copied_heads, :] = 0
+            #     mask = self.q_mask.repeat(3, 1)
+            #     self.in_proj_weight = Parameter(self.in_proj_weight * mask + prev_weight["in"] * (1 - mask))
+            # else:
+            #     self.k_mask[copied_heads, :], self.v_mask[copied_heads, :] = 0, 0
+            #     self.k_proj_weight = Parameter(self.k_proj_weight * self.k_mask + prev_weight["k"]* (1 - self.k_mask))
+            #     self.v_proj_weight = Parameter(self.v_proj_weight * self.v_mask + prev_weight["v"] * (1 - self.v_mask))
+            #     self.q_proj_weight = Parameter(self.q_proj_weight * self.q_mask + prev_weight["q"] * (1 - self.q_mask))
+
+            # self.out_proj_mask[copied_heads, :] = 0
+            # self.out_proj.weight = Parameter(self.out_proj.weight * self.out_proj_mask + prev_weight["out"] * (1 - self.out_proj_mask))
 
 
 
@@ -132,6 +141,7 @@ class MultiheadAttention_v2(nn.Module):
         if self.num_copied_heads > 0 and prev_weight is not None:
             copied_idx = np.random.choice(self.num_heads, self.num_copied_heads, replace = False)
             copied_heads = np.reshape(np.array([list(range(s, e)) for (s, e) in zip(copied_idx * self.head_dim, (copied_idx + 1) * self.head_dim)]), -1)
+
         self.reset_parameters(prev_weight, copied_heads)
 
         if self.enable_torch_version and not self.onnx_trace and incremental_state is None and not static_kv:
@@ -282,6 +292,13 @@ class MultiheadAttention_v2(nn.Module):
             attn_weights = attn_weights.view(bsz, self.num_heads, tgt_len, src_len)
             attn_weights[:, copied_idx, :, :] = prev_weight["nonavg"][:, copied_idx, :, :]
             attn_weights = attn_weights.view(bsz * self.num_heads, tgt_len, src_len)
+            
+        attention_weights = {}
+        if need_weights:
+            # un-averaged attention weight
+            attention_weights["nonavg"] = attn_weights.view(bsz, self.num_heads, tgt_len, src_len).detach().clone()
+            # attention_weights["nonavg"] = attn_weights.view(bsz, self.num_heads, tgt_len, src_len) # [bz, num_heads, tgt_len, src_len]
+        
         
         attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.training)
         attn = torch.bmm(attn_weights, v)
@@ -295,22 +312,19 @@ class MultiheadAttention_v2(nn.Module):
             attn = attn.transpose(0, 1).contiguous().view(tgt_len, bsz, embed_dim)
         attn = self.out_proj(attn)
 
-        attention_weights = {}
+        
         if need_weights:
-
-            attn_weights = attn_weights.view(bsz, self.num_heads, tgt_len, src_len)
-
             # average attention weights over heads
+            attn_weights = attn_weights.view(bsz, self.num_heads, tgt_len, src_len)
             attention_weights["avg"] = attn_weights.sum(dim=1) / self.num_heads # [bz, tgt_len, src_len]
-            # un-averaged attention weight
-            attention_weights["nonavg"] = attn_weights # [bz, num_heads, tgt_len, src_len]
 
             # projection weight
             if self.qkv_same_dim:
-                attention_weights["in"] = self.in_proj_weight
+                attention_weights["in"] = self.in_proj_weight.detach().clone()
             else:
-                attention_weights["k"], attention_weights["q"], attention_weights["v"] = self.k_proj_weight, self.q_proj_weight, self.v_proj_weight
-            attention_weights["out"] = self.out_proj.weight
+                attention_weights["k"], attention_weights["q"], attention_weights["v"] =\
+                 self.k_proj_weight.detach().clone(), self.q_proj_weight.detach().clone(), self.v_proj_weight.detach().clone()
+            attention_weights["out"] = self.out_proj.weight.detach().clone()
 
         return attn, attention_weights
 

@@ -22,9 +22,9 @@
 
 | V2 Model Variation        | MNLI      | QNLI | QQP       | RTE  | SST-2| MRPC      | CoLA | STS-B     | WSC  |
 |---|---|---|---|---|---|---|---|---|---|
-| base                                     dev | 87.7 |      |           |      |      | 89.7,83.3 |      |           |      |
+| base                                     dev |  |      |           |      |      | 89.7,83.3 |      |           |      |
 | forget                                   dev |           |      |           |      |      | 89.4,83.3 |      |           |      |
-| base w/pooler_dropout=0.3                dev |           |      |           |      |      | 90.6,85.6 |      |           |      |
+| base w/pooler_dropout=0.3                dev | 87.7 |      |           |      |      | 90.6,85.6 |      |           |      |
 | forget w/pooler_dropout=0.3              dev |           |      |           |      |      | 90.4,85.4 |      |           |      |
 | base w/stable_init,pooler_dropout=0.2    dev | 88.0 |      |           |      |      | 90.4,84.4 |      |           |      |
 | forget w/stable_init,pooler_dropout=0.2  dev |           |      |           |      |      |  |      |           |      |

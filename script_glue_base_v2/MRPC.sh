@@ -15,8 +15,8 @@ DATA_ROOT=$PROJECT_ROOT/data
 SEED=0
 TASK=MRPC
 TAG=Baseline_Base
-ARCH=roberta_v2_base_2
-RATIO=0.0
+ARCH=roberta_v2_base_4
+RATIO=0.5
 
 TOTAL_NUM_UPDATES=2296  # 10 epochs through RTE for bsz 16
 EPOCH=10          # total epoches
@@ -43,7 +43,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --arch $ARCH \
 --criterion sentence_prediction_mtvat \
 --num-classes $NUM_CLASSES \
---dropout 0.1 --attention-dropout 0.1 --pooler-dropout 0.3 \
+--dropout 0.1 --attention-dropout 0.1 --pooler-dropout 0.2 \
 --decoder-attn-stable-init-ratio $RATIO \
 --weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \
 --clip-norm 0.0 \

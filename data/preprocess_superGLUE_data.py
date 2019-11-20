@@ -9,7 +9,7 @@ from fairseq import options
 from multiprocessing_bpe_encoder import main as encoder
 from fairseq_cli.preprocess import main as binarize_func
 
-TASKS = ["AX-b", "AX-g", "BoolQ", "CB", "COPA", "MultiRC", "ReCoRD", "RTE" ,"WiC"]
+TASKS = ["AX-b", "AX-g", "BoolQ", "CB", "COPA", "MultiRC", "ReCoRD", "RTE" ,"WiC", "ANLI"]
 
 
 def binarize(arguments):
@@ -160,6 +160,16 @@ def main(arguments):
         pass
     if 'Ax-g' in tasks:
         pass
+    if 'ANLI' in tasks:
+        def process_func(example):
+            try:
+                label = str(example['label'])
+            except:
+                label = -1
+            return [ # one sample
+                    [[example["context"], example["hypothesis"]] , label]
+                    ]
+        preprocess('ANLI', args, 2, process_func,splits=["train","dev", "dev_t","test"],val_splits=["dev","dev_t"])
     if 'BoolQ' in tasks:
         def process_func(example):
             try:

@@ -22,3 +22,15 @@ python -m spacy download en_core_web_lg
 ./download_superGlue_data.sh
 python preprocess_superGLUE_data.py --tasks <task_name>
 ```
+
+# ANLI
+
+``` bash
+python download_glue_data.py --tasks ANLI
+./clean_ANLI.sh glue_data
+```
+Combined data:
+``` bash
+python download_glue_data.py --tasks ANLI,MNLI,SNLI
+./preprocess_NLI.sh glue_data "MNLI SNLI"
+```

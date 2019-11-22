@@ -49,7 +49,7 @@ def preprocess(task, args, ninputs, process_func, nspans=0, splits=["train","val
                             spanfile.write(inputset[s[0]][:s[1]]); spanfile.write('\n')
                             spanfile.write(inputset[s[0]][:s[2]]); spanfile.write('\n')
                     for input_sent, inputfile in zip (inputset,inputfiles):
-                            inputfile.write(input_sent); inputfile.write('\n')
+                            inputfile.write(input_sent.replace("\n", " ")); inputfile.write('\n')
                     label_file.write(str(label));   label_file.write('\n')
         for i,inputfile in enumerate(inputfiles):
             inputfile.close()

@@ -16,12 +16,12 @@ SEED=0
 TASK=ANLI
 TAG=Baseline_Large
 
-TOTAL_NUM_UPDATES=123873
+TOTAL_NUM_UPDATES=14270
 EPOCH=10          # total epoches
-WARMUP_UPDATES=7432      # 6 percent of the number of updates
+WARMUP_UPDATES=1000      # 6 percent of the number of updates
 LR=1e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=3
-MAX_SENTENCES=32        # Batch size.
+MAX_SENTENCES=16        # Batch size.
 
 OUTPUT=$PROJECT_ROOT/checkpoints/${TASK}/${EPOCH}_${LR}_${TAG}_${SEED}
 [ -e $OUTPUT/script  ] || mkdir -p $OUTPUT/script
@@ -39,7 +39,7 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --required-batch-size-multiple 1 \
 --init-token 0 --separator-token 2 \
 --arch roberta_large \
---criterion sentence_prediction_mtvat \
+--criterion sentence_prediction \
 --num-classes $NUM_CLASSES \
 --dropout 0.1 --attention-dropout 0.1 \
 --weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \
@@ -52,4 +52,4 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --best-checkpoint-metric accuracy --maximize-best-checkpoint-metric \
 --no-last-checkpoints --no-save-optimizer-state \
 --find-unused-parameters \
---seed $SEED
+--seed $SEED --update-freq 2

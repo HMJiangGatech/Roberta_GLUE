@@ -40,7 +40,7 @@ def main():
     # create csv to write to (split into train, test, eval sets)
     with open('nli_fever.jsonl', 'w+') as fout:
         # collect evidence ids and pair to wiki_data based on sentence index
-        for infile in ['fever/train.jsonl']:
+        for infile in ['train.jsonl']:
             with open(infile) as jreader:
                 for itm in jreader:
                     j = json.loads(itm)
@@ -71,6 +71,7 @@ def main():
                                 try:
                                     article_name = normalize('NFC', article_name)
                                     current_sentence = wiki_data[article_name][sentence_id].split('\t')[1]
+                                    import ipdb; ipdb.set_trace()
                                     if current_sentence not in newitem['premise']:
                                         newitem['premise'].append(current_sentence)
                                 except KeyError as e:
@@ -79,7 +80,7 @@ def main():
                     if len(newitem['premise']) > 0:
                         newitem['premise'] = ''.join(newitem['premise']).replace('\n',' ')
                         json.dump(newitem, fout)
-                        fout.write('\n')
+                        import ipdb; ipdb.set_trace()
                     else:
                         print(id, ' has no evidence.')                        
 

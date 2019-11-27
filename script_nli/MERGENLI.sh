@@ -13,15 +13,15 @@ ROBERTA_Large_DIR=$PROJECT_ROOT/checkpoints/roberta.large/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
 SEED=0
-TASK=ANLI
+TASK=MERGENLI
 TAG=Baseline_Large
 
-TOTAL_NUM_UPDATES=20360
+TOTAL_NUM_UPDATES=86810
 EPOCH=10          # total epoches
-WARMUP_UPDATES=1000      # 6 percent of the number of updates
+WARMUP_UPDATES=3000      # 6 percent of the number of updates
 LR=2e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=3
-MAX_SENTENCES=10        # Batch size.
+MAX_SENTENCES=8        # Batch size.
 
 OUTPUT=$PROJECT_ROOT/checkpoints/${TASK}/${EPOCH}_${LR}_${TAG}_${SEED}
 [ -e $OUTPUT/script  ] || mkdir -p $OUTPUT/script
@@ -32,11 +32,10 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --save-dir $OUTPUT \
 --restore-file $ROBERTA_Large_DIR \
 --max-positions 512 \
---max-sentences $MAX_SENTENCES \
+--max-sentences $MAX_SENTENCES  \
 --max-tokens 4400 \
 --task sentence_prediction \
 --reset-optimizer --reset-dataloader --reset-meters \
---required-batch-size-multiple 1 \
 --init-token 0 --separator-token 2 \
 --arch roberta_large \
 --criterion sentence_prediction_mtvat \
@@ -47,9 +46,10 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \
 --fp16 --fp16-init-scale 4 --threshold-loss-scale 1 --fp16-scale-window 128 --memory-efficient-fp16 \
 --max-epoch $EPOCH \
---valid-subset valid,valid1 \
+--valid-subset valid,valid1,valid2,valid3 \
 --user-dir ./mymodule \
 --best-checkpoint-metric accuracy --maximize-best-checkpoint-metric \
 --no-last-checkpoints --no-save-optimizer-state \
 --find-unused-parameters \
---seed $SEED #--update-freq 2
+--seed $SEED --distributed-no-spawn --ddp-backend c10d --num-workers 0 #--required-batch-size-multiple 1 #--update-freq 2
+

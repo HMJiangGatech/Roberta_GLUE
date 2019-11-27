@@ -16,7 +16,7 @@ from fairseq.optim import FairseqOptimizer, register_optimizer
 class FairseqRMSplus(FairseqOptimizer):
 
     def __init__(self, args, params):
-        super().__init__(args)
+        super().__init__(args, params)
         self._optimizer = RMSplus(params, **self.optimizer_config)
 
     @staticmethod

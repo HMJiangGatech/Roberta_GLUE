@@ -13,15 +13,32 @@ ROBERTA_Large_DIR=$PROJECT_ROOT/checkpoints/roberta.large/model.pt
 DATA_ROOT=$PROJECT_ROOT/data
 
 SEED=0
-TASK=ANLI
-TAG=Baseline_Large
+TASK=MERGENLI
+TAG=SMART_Large
 
-TOTAL_NUM_UPDATES=20360
+TOTAL_NUM_UPDATES=86810
 EPOCH=10          # total epoches
-WARMUP_UPDATES=1000      # 6 percent of the number of updates
+WARMUP_UPDATES=3000      # 6 percent of the number of updates
 LR=2e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=3
-MAX_SENTENCES=10        # Batch size.
+MAX_SENTENCES=8        # Batch size.
+
+MEAN_TEACHER=False
+MEAN_TEACHER_AVG=simple
+MT_ALPHA1=0.99
+MT_ALPHA2=0.999
+MT_RAMPUP=16000
+MT_UPDATE=16000
+
+MT_LAMBDA=1
+VAT_LAMBDA=10
+
+USE_VAT=True
+USE_NOISECP=False
+USE_ADVCP=False
+VAT_EPS=1e-3
+ADVCP_EPS=1e-6
+TEACHER_CLASS=kl
 
 OUTPUT=$PROJECT_ROOT/checkpoints/${TASK}/${EPOCH}_${LR}_${TAG}_${SEED}
 [ -e $OUTPUT/script  ] || mkdir -p $OUTPUT/script
@@ -30,13 +47,27 @@ rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'fairseq' --exclud
 
 CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --save-dir $OUTPUT \
+--pooler-dropout 0.3 \
+--mean_teacher_lambda $MT_LAMBDA \
+--vat_lambda $VAT_LAMBDA \
+--vat_eps $VAT_EPS \
+--mean_teacher $MEAN_TEACHER \
+--mean_teacher_avg $MEAN_TEACHER_AVG \
+--mean_teacher_alpha1 $MT_ALPHA1 \
+--mean_teacher_alpha2 $MT_ALPHA2 \
+--mean_teacher_rampup $MT_RAMPUP \
+--mean_teacher_updatefreq $MT_UPDATE \
+--teacher_class $TEACHER_CLASS \
+--use_vat $USE_VAT \
+--use_noisycopy $USE_NOISECP \
+--use_advcopy $USE_ADVCP \
+--advcopy_eps $ADVCP_EPS \
 --restore-file $ROBERTA_Large_DIR \
 --max-positions 512 \
---max-sentences $MAX_SENTENCES \
+--max-sentences $MAX_SENTENCES  \
 --max-tokens 4400 \
---task sentence_prediction \
+--task sentence_prediction_mtvat \
 --reset-optimizer --reset-dataloader --reset-meters \
---required-batch-size-multiple 1 \
 --init-token 0 --separator-token 2 \
 --arch roberta_large \
 --criterion sentence_prediction_mtvat \
@@ -47,9 +78,10 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \
 --fp16 --fp16-init-scale 4 --threshold-loss-scale 1 --fp16-scale-window 128 --memory-efficient-fp16 \
 --max-epoch $EPOCH \
---valid-subset valid,valid1 \
+--valid-subset valid,valid1,valid2,valid3 \
 --user-dir ./mymodule \
 --best-checkpoint-metric accuracy --maximize-best-checkpoint-metric \
 --no-last-checkpoints --no-save-optimizer-state \
 --find-unused-parameters \
---seed $SEED #--update-freq 2
+--seed $SEED --distributed-no-spawn --ddp-backend c10d --num-workers 0 #--required-batch-size-multiple 1 #--update-freq 2
+

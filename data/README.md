@@ -33,4 +33,7 @@ Combined data:
 ``` bash
 python download_glue_data.py --tasks ANLI,MNLI,SNLI
 ./preprocess_NLI.sh glue_data "MNLI SNLI"
+mkdir glue_data/FEVER
+wget https://github.com/HMJiangGatech/fever_nli/raw/master/nli_fever.jsonl -O glue_data/FEVER/train.jsonl
+python preprocess_superGLUE_data.py --tasks FEVER --data_dir glue_data
 ```

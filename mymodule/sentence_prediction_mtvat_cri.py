@@ -33,20 +33,13 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
         2) the sample size, which is used as the denominator for the gradient
         3) logging outputs to display while training
         """
-        features, extra = model(**sample['net_input'], features_only=True, return_all_hiddens=returnfull)
-        if returnfull:
-            features = features.transpose(0, 1)
-        padding_mask = sample['net_input']['src_tokens'].eq(self.padding_idx)
 
         assert hasattr(model, 'classification_heads') and \
             'sentence_classification_head' in model.classification_heads, \
             "model must provide sentence classification head for --criterion=sentence_prediction"
 
-        logits = model.classification_heads['sentence_classification_head'](
-            features,
-            padding_mask=padding_mask,
-        )
-
+        logits, extra = model(**sample['net_input'], features_only=True,
+                classification_head_name='sentence_classification_head', return_all_hiddens=returnfull)
         targets = model.get_targets(sample, [logits]).view(-1)
         sample_size = targets.numel()
 

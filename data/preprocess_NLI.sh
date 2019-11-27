@@ -35,15 +35,19 @@ do
 
   SPLITS="train dev test"
   INPUT_COUNT=2
-  INPUT_COLUMNS=( 9 10 )
-  TEST_INPUT_COLUMNS=( 9 10 )
-  DEV_LABEL_COLUMN=16
-  LABEL_COLUMN=12
   if [ "$TASK" = "MNLI" ]
   then
+    INPUT_COLUMNS=( 9 10 )
+    TEST_INPUT_COLUMNS=( 9 10 )
+    DEV_LABEL_COLUMN=16
+    LABEL_COLUMN=12
     SPLITS="train dev_matched dev_mismatched test_matched test_mismatched"
   elif [ "$TASK" = "SNLI" ]
   then
+    INPUT_COLUMNS=( 8 9 )
+    TEST_INPUT_COLUMNS=( 8 9 )
+    DEV_LABEL_COLUMN=15
+    LABEL_COLUMN=11
     SPLITS="train dev dev_t test"
     cp $TASK_DATA_FOLDER/test.tsv $TASK_DATA_FOLDER/dev_t.tsv
   fi

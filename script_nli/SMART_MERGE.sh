@@ -16,12 +16,12 @@ SEED=0
 TASK=MERGENLI
 TAG=SMART_Large
 
-TOTAL_NUM_UPDATES=86810
-EPOCH=10          # total epoches
+TOTAL_NUM_UPDATES=69448
+EPOCH=4          # total epoches
 WARMUP_UPDATES=3000      # 6 percent of the number of updates
-LR=2e-05                # Peak LR for polynomial LR scheduler.
+LR=1e-05                # Peak LR for polynomial LR scheduler.
 NUM_CLASSES=3
-MAX_SENTENCES=8        # Batch size.
+MAX_SENTENCES=4        # Batch size.
 
 MEAN_TEACHER=False
 MEAN_TEACHER_AVG=simple
@@ -36,7 +36,7 @@ VAT_LAMBDA=10
 USE_VAT=True
 USE_NOISECP=False
 USE_ADVCP=False
-VAT_EPS=1e-3
+VAT_EPS=1e-4
 ADVCP_EPS=1e-6
 TEACHER_CLASS=kl
 

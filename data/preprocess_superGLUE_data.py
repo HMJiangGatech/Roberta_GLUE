@@ -9,7 +9,7 @@ from fairseq import options
 from multiprocessing_bpe_encoder import main as encoder
 from fairseq_cli.preprocess import main as binarize_func
 
-TASKS = ["AX-b", "AX-g", "BoolQ", "CB", "COPA", "MultiRC", "ReCoRD", "RTE" ,"WiC"]
+TASKS = ["AX-b", "AX-g", "BoolQ", "CB", "COPA", "MultiRC", "ReCoRD", "RTE" ,"WiC", "ANLI", "FEVER"]
 
 
 def binarize(arguments):
@@ -49,7 +49,7 @@ def preprocess(task, args, ninputs, process_func, nspans=0, splits=["train","val
                             spanfile.write(inputset[s[0]][:s[1]]); spanfile.write('\n')
                             spanfile.write(inputset[s[0]][:s[2]]); spanfile.write('\n')
                     for input_sent, inputfile in zip (inputset,inputfiles):
-                            inputfile.write(input_sent); inputfile.write('\n')
+                            inputfile.write(input_sent.replace("\n", " ")); inputfile.write('\n')
                     label_file.write(str(label));   label_file.write('\n')
         for i,inputfile in enumerate(inputfiles):
             inputfile.close()
@@ -160,6 +160,32 @@ def main(arguments):
         pass
     if 'Ax-g' in tasks:
         pass
+    if 'FEVER' in tasks:
+        def process_func(example):
+            try:
+                label = str(example['label'])
+            except:
+                label = -1
+            return [ # one sample
+                    [[example["premise"], example["hypothesis"]] , label]
+                    ]
+        preprocess('FEVER', args, 2, process_func,splits=["train"],val_splits=[],test_splits=[])
+    if 'ANLI' in tasks:
+        def process_func(example):
+            try:
+                label = str(example['label'])
+            except:
+                label = -1
+            if label == 'n':
+                label='neutral'
+            if label == 'e':
+                label = 'entailment'
+            if label == 'c':
+                label = 'contradiction'
+            return [ # one sample
+                    [[example["context"], example["hypothesis"]] , label]
+                    ]
+        preprocess('ANLI', args, 2, process_func,splits=["train","dev", "dev_t","test"],val_splits=["dev","dev_t"])
     if 'BoolQ' in tasks:
         def process_func(example):
             try:

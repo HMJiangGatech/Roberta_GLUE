@@ -10,3 +10,5 @@ from .wsc import *
 
 # roberta_v2
 from .roberta_models.roberta_v2 import RobertaModel_v2
+
+from .rmsplus import FairseqRMSplus

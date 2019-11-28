@@ -44,6 +44,7 @@ class Logger(object):
         pass
 
 def main(args, init_distributed=False):
+    sys.stdout = Logger(args.save_dir +"/log.txt","a", sys.stdout)
     utils.import_user_module(args)
 
     assert args.max_tokens is not None or args.max_sentences is not None, \
@@ -348,8 +349,6 @@ def distributed_main(i, args, start_rank=0):
 def cli_main():
     parser = options.get_training_parser()
     args = options.parse_args_and_arch(parser)
-
-    sys.stdout = Logger(args.save_dir +"/log.txt","w", sys.stdout)
 
     if args.distributed_init_method is None:
         distributed_utils.infer_init_method(args)

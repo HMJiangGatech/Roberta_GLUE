@@ -110,9 +110,9 @@ class SentencePredictionMTVATCriterion(FairseqCriterion):
                 ncorrect = sum(log.get('ncorrect', 0) for log in logging_outputs)
                 agg_output.update(accuracy=ncorrect/nsentences)
             if 'preds' in logging_outputs[0]:
-                agg_output.update(preds=np.concatenate([log.get('preds', np.empty(0)) for log in logging_outputs]))
-                agg_output.update(targets=np.concatenate([log.get('targets', np.empty(0)) for log in logging_outputs]))
-                agg_output.update(pred_ids=np.concatenate([log.get('pred_ids', np.empty(0)) for log in logging_outputs]))
+                agg_output.update(preds=np.concatenate([log.get('preds', np.empty(0)).reshape(-1) for log in logging_outputs]))
+                agg_output.update(targets=np.concatenate([log.get('targets', np.empty(0)).reshape(-1) for log in logging_outputs]))
+                agg_output.update(pred_ids=np.concatenate([log.get('pred_ids', np.empty(0)).reshape(-1) for log in logging_outputs]))
 
         if sample_size != ntokens:
             agg_output['nll_loss'] = loss_sum / ntokens / math.log(2)

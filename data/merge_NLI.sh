@@ -12,7 +12,7 @@ mkdir -p $FOLDER/MERGENLI/processed
 for FILE in train.input0 train.input1 train.label
 do
     cat \
-    $FOLDER/MNLI/processed/$FILE $FOLDER/ANLI/processed/$FILE  > $FOLDER/MERGENLI/processed/$FILE
+    $FOLDER/MNLI/processed/$FILE $FOLDER/ANLI/processed/$FILE $FOLDER/ANLI/processed/$FILE $FOLDER/ANLI/processed/$FILE  > $FOLDER/MERGENLI/processed/$FILE
 done
 for FILEPRE in dev_matched dev_mismatched
 do

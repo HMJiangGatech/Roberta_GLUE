@@ -14,12 +14,13 @@ DATA_ROOT=$PROJECT_ROOT/data
 
 SEED=0
 TASK=MERGENLI
-TAG=SMART_Large
+TAG=SMART_Large_Ticky
 
-TOTAL_NUM_UPDATES=69448
+TOTAL_NUM_UPDATES=41313
 EPOCH=4          # total epoches
 WARMUP_UPDATES=3000      # 6 percent of the number of updates
 LR=1e-05                # Peak LR for polynomial LR scheduler.
+ENDLR=1e-6
 NUM_CLASSES=3
 MAX_SENTENCES=4        # Batch size.
 
@@ -31,12 +32,12 @@ MT_RAMPUP=16000
 MT_UPDATE=16000
 
 MT_LAMBDA=1
-VAT_LAMBDA=10
+VAT_LAMBDA=20
 
 USE_VAT=True
 USE_NOISECP=False
 USE_ADVCP=False
-VAT_EPS=1e-4
+VAT_EPS=3e-4
 ADVCP_EPS=1e-6
 TEACHER_CLASS=kl
 
@@ -83,5 +84,6 @@ CUDA_VISIBLE_DEVICES=$GPUID python train.py $DATA_ROOT/$TASK-bin/ \
 --best-checkpoint-metric accuracy --maximize-best-checkpoint-metric \
 --no-last-checkpoints --no-save-optimizer-state \
 --find-unused-parameters \
---seed $SEED --distributed-no-spawn --ddp-backend c10d --num-workers 0 #--required-batch-size-multiple 1 #--update-freq 2
+--seed $SEED --distributed-no-spawn --ddp-backend no_c10d --num-workers 0 --update-freq 2 \
+--end-learning-rate $ENDLR --save-interval-updates 2000 --keep-interval-updates 10
 

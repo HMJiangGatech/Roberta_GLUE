@@ -8,12 +8,13 @@ from tqdm import tqdm
 import ipdb
 import math
 import torch
+import json
 
 from mymodule import *
 
 from fairseq.models.roberta import RobertaModel
 
-TASKS = ['CoLA','MNLI','MRPC','QNLI','QQP','RTE','SST-2','STS-B','WSC', "AX", 'MNLI_DEV']
+TASKS = ['CoLA','MNLI','MRPC','QNLI','QQP','RTE','SST-2','STS-B','WSC', "AX", 'MNLI_DEV', 'ANLI']
 
 parser = argparse.ArgumentParser(description='Roberta GLUE Evaluation')
 parser.add_argument('--task', default='WSC', type=str, choices=TASKS, help='Task Names')
@@ -71,6 +72,8 @@ def sentence_predict(task, ckpdir, ckpname, savedir, datadir = None):
                         prediction_label = min(1.0,max(0.0,prediction_label))
                     else:
                         prediction = roberta.predict('sentence_classification_head', tokens).argmax().item()
+                        if 'MNLI' in task:
+                            prediction = 2-prediction
                         prediction_label = label_fn(prediction)
                     tsv_writer.writerow([index, prediction_label])
 
@@ -131,7 +134,7 @@ def mnli_dev(ckpdir, ckpname, datadir = None):
                 tokens = line.strip().split('\t')
                 input_token = roberta.encode(tokens[8], tokens[9])
                 log_softmax_out = roberta.predict('sentence_classification_head', input_token)
-                prediction = log_softmax_out.argmax().item()
+                prediction = 2 - log_softmax_out.argmax().item()
 
                 labels = np.array([ str2label(t.lower()) for t in tokens[10:15]])
                 labels = np.array([ sum(labels==l) for l in range(3) ])/5
@@ -143,6 +146,47 @@ def mnli_dev(ckpdir, ckpname, datadir = None):
                 pbar.set_description("tv: {:.4f}/ {:.4f}-{:.4f}, accu: {:.4f} ".format(tv_loss/(index+1), tv_low/(index+1), tv_high/(index+1), accuracy/(index+1)))
 
 
+def anli_dev(ckpdir, ckpname, datadir = None):
+    task = 'ANLI'
+    if datadir is None:
+        datadir = 'data/{}-bin/'.format(task)
+    roberta = RobertaModel.from_pretrained(ckpdir, ckpname, datadir)
+    roberta.cuda()
+    roberta.eval()
+    label_fn = lambda label: roberta.task.label_dictionary.string(
+                [label + roberta.task.target_dictionary.nspecial]
+            )
+    str2label = lambda str: roberta.task.label_dictionary.encode_line(str)[0].item() - roberta.task.target_dictionary.nspecial
+
+    tasks = ["dev{}".format(f) for f in ['','_t','_R1','_R1_t','_R2','_R2_t','_R3','_R3_t']]
+    testfiles = [os.path.join(datadir,'../glue_data/ANLI/{}.jsonl'.format(f)) for f in tasks]
+
+
+    for task, testfile in zip(tasks, testfiles):
+        tv_loss = 0
+        tv_low  = 0
+        tv_high = 0
+        accuracy = 0
+        print("Task: {}".format(task))
+        with open(testfile) as fin:
+            fin.readline()
+            pbar = tqdm(enumerate(fin))
+            for index, line in pbar:
+                example = json.loads(line.strip())
+                input_token = roberta.encode(example["context"], example["hypothesis"])
+                log_softmax_out = roberta.predict('sentence_classification_head', input_token)
+                prediction = 2-log_softmax_out.argmax().item()
+                label = example['label'].lower()
+                if label == 'n':
+                    label='neutral'
+                if label == 'e':
+                    label = 'entailment'
+                if label == 'c':
+                    label = 'contradiction'
+                label = 2-str2label(label)
+                #print(label," - ",prediction)
+                accuracy += prediction == label
+                pbar.set_description("accu: {:.4f} ".format(accuracy/(index+1)))
 
 
 if __name__ == '__main__':
@@ -153,6 +197,8 @@ if __name__ == '__main__':
     with torch.no_grad():
         if args.task == 'MNLI_DEV':
             mnli_dev(ckpdir, ckpname, args.datadir)
+        elif args.task == 'ANLI':
+            anli_dev(ckpdir, ckpname, args.datadir)
         elif args.task.lower() == 'wsc':
             wsc_eval(ckpdir, ckpname, args.savedir, args.datadir)
         else:

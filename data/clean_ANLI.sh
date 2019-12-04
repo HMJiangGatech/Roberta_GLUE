@@ -14,4 +14,10 @@ cat $TASK_FOLDER/R1/dev.jsonl $TASK_FOLDER/R2/dev.jsonl $TASK_FOLDER/R3/dev.json
 cat $TASK_FOLDER/R1/test.jsonl $TASK_FOLDER/R2/test.jsonl $TASK_FOLDER/R3/test.jsonl > $TASK_FOLDER/test.jsonl
 cp $TASK_FOLDER/test.jsonl $TASK_FOLDER/dev_t.jsonl
 
+for ROUND in R1 R2 R3
+do
+  cp $TASK_FOLDER/${ROUND}/dev.jsonl $TASK_FOLDER/dev_${ROUND}.jsonl
+  cp $TASK_FOLDER/${ROUND}/test.jsonl $TASK_FOLDER/dev_${ROUND}_t.jsonl
+done
+
 python preprocess_superGLUE_data.py --tasks ANLI --data_dir $FOLDER

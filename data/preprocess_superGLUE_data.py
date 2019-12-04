@@ -185,7 +185,10 @@ def main(arguments):
             return [ # one sample
                     [[example["context"], example["hypothesis"]] , label]
                     ]
-        preprocess('ANLI', args, 2, process_func,splits=["train","dev", "dev_t","test"],val_splits=["dev","dev_t"])
+        dev_splits = []
+        for r in ['','_R1','_R2','_R3']:
+            dev_splits += ['dev{}'.format(r), 'dev{}_t'.format(r)]
+        preprocess('ANLI', args, 2, process_func,splits=["train","test"]+dev_splits,val_splits=dev_splits)
     if 'BoolQ' in tasks:
         def process_func(example):
             try:
